@@ -14,6 +14,29 @@ Report the health of the Claudian Obsidian vault as a concise dashboard.
 - After a batch of vault-write calls to check for orphans
 - Before a vault-link run to find what needs linking
 
+## Fresh Vault Detection
+
+Before running checks, determine if this is a freshly initialized vault:
+- All notes were created today (check `created` frontmatter)
+- The `knowledge/` and `ideas/` folders are empty
+- Only project index stubs exist
+
+If the vault is fresh, report it clearly instead of flagging false issues:
+
+```
+VAULT STATUS — {date}
+
+Vault just initialized. No knowledge notes yet.
+Projects registered: {list}
+
+Get started:
+- Write freeform ideas in {vault}/ideas/ and run /vault-extract
+- Use /vault-write when you discover durable knowledge
+- The SessionStart hook will surface relevant notes as the vault grows
+```
+
+Skip the full dashboard for fresh vaults — orphan and stale checks are meaningless when there's no content yet.
+
 ## What to Report
 
 Run all checks and present the results together as a single dashboard. Do not pause between checks.

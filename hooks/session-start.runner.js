@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
@@ -5,7 +6,10 @@ import { loadFrom, detectProject } from '../core/config.js';
 import { buildIndex, rankNotes } from '../core/relevance.js';
 import { resolveHome } from '../core/resolver.js';
 
-export const INDEX_CACHE_PATH = join(tmpdir(), 'claudian', 'index-cache.json');
+export function indexCachePath(vaultPath) {
+  const hash = createHash('md5').update(vaultPath).digest('hex').slice(0, 12);
+  return join(tmpdir(), 'claudian', `index-cache-${hash}.json`);
+}
 
 const configPath = process.argv[2] || resolveHome('~/.claudian/config.yaml');
 
@@ -31,9 +35,10 @@ async function run() {
   }
 
   // Cache index for UserPromptSubmit hook (avoids rebuilding on every prompt)
+  const cachePath = indexCachePath(vaultPath);
   try {
-    await mkdir(dirname(INDEX_CACHE_PATH), { recursive: true });
-    await writeFile(INDEX_CACHE_PATH, JSON.stringify(index));
+    await mkdir(dirname(cachePath), { recursive: true });
+    await writeFile(cachePath, JSON.stringify(index));
   } catch {
     // Non-fatal: prompt-submit will just skip matching
   }

@@ -1,8 +1,14 @@
+import { createHash } from 'crypto';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { loadFrom, detectProject } from '../core/config.js';
+import { resolveHome } from '../core/resolver.js';
 
-const INDEX_CACHE_PATH = join(tmpdir(), 'claudian', 'index-cache.json');
+function indexCachePath(vaultPath) {
+  const hash = createHash('md5').update(vaultPath).digest('hex').slice(0, 12);
+  return join(tmpdir(), 'claudian', `index-cache-${hash}.json`);
+}
 
 export function matchKeywords(message, index) {
   const messageLower = message.toLowerCase();
@@ -40,10 +46,21 @@ async function run() {
     userMessage = input;
   }
 
+  // Resolve vault path to find the correct cache file
+  let cachePath;
+  try {
+    const config = await loadFrom(resolveHome('~/.claudian/config.yaml'));
+    const { vault } = detectProject(config, process.cwd());
+    cachePath = indexCachePath(resolveHome(vault.path));
+  } catch {
+    emptyOutput();
+    return;
+  }
+
   // Read cached index from SessionStart (no filesystem scan on every prompt)
   let index;
   try {
-    const cached = await readFile(INDEX_CACHE_PATH, 'utf-8');
+    const cached = await readFile(cachePath, 'utf-8');
     index = JSON.parse(cached);
   } catch {
     emptyOutput();
