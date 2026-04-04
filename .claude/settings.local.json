@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__claude-peers__set_summary",
+      "mcp__claudy-talky__set_summary",
+      "WebFetch(domain:obsidian.md)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:publish-01.obsidian.md)",
+      "WebSearch",
+      "WebFetch(domain:help.obsidian.md)",
+      "Bash(xargs -I {} head -20 {})",
+      "Read(//c/Users/Cyano/.claude/plugins/cache/stagehand/0.1.0/**)",
+      "Read(//c/Users/Cyano/.claude/plugins/cache/**)",
+      "Bash(xargs cat:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

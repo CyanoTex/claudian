@@ -1,0 +1,7 @@
+* text=auto
+hooks/session-start text eol=lf
+hooks/user-prompt-submit text eol=lf
+hooks/run-hook.cmd text eol=crlf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf

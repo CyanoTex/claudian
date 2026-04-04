@@ -1,0 +1,81 @@
+import { writeFile, mkdir } from 'fs/promises';
+import { join, dirname } from 'path';
+import { tmpdir } from 'os';
+import { loadFrom, detectProject } from '../core/config.js';
+import { buildIndex, rankNotes } from '../core/relevance.js';
+import { resolveHome } from '../core/resolver.js';
+
+export const INDEX_CACHE_PATH = join(tmpdir(), 'claudian', 'index-cache.json');
+
+const configPath = process.argv[2] || resolveHome('~/.claudian/config.yaml');
+
+async function run() {
+  let config;
+  try {
+    config = await loadFrom(configPath);
+  } catch (err) {
+    output(`[Claudian] Config not found at ${configPath}. Run /claudian-init to set up.`);
+    return;
+  }
+
+  const cwd = process.cwd();
+  const { vault, project, tags } = detectProject(config, cwd);
+  const vaultPath = resolveHome(vault.path);
+
+  let index;
+  try {
+    index = await buildIndex(vaultPath);
+  } catch (err) {
+    output(`[Claudian] Could not read vault at ${vaultPath}: ${err.message}`);
+    return;
+  }
+
+  // Cache index for UserPromptSubmit hook (avoids rebuilding on every prompt)
+  try {
+    await mkdir(dirname(INDEX_CACHE_PATH), { recursive: true });
+    await writeFile(INDEX_CACHE_PATH, JSON.stringify(index));
+  } catch {
+    // Non-fatal: prompt-submit will just skip matching
+  }
+
+  const relevant = rankNotes(index, project, tags || []).slice(0, 20);
+
+  const lines = [
+    `# Claudian Vault Context`,
+    ``,
+    `**Vault:** ${vault.name} (${vaultPath})`,
+    `**Project:** ${project || 'unregistered'}`,
+    `**Notes indexed:** ${index.length}`,
+    ``,
+  ];
+
+  if (relevant.length > 0) {
+    lines.push(`## Relevant Notes`);
+    lines.push(``);
+    lines.push(`| Title | Type | Tags | Path |`);
+    lines.push(`|---|---|---|---|`);
+    for (const note of relevant) {
+      lines.push(`| ${note.title} | ${note.type} | ${note.tags.join(', ')} | ${note.relPath} |`);
+    }
+    lines.push(``);
+    lines.push(`Use vault-search to find more notes or read a specific note by path.`);
+  } else {
+    lines.push(`No relevant notes found. Use vault-write to start building knowledge.`);
+  }
+
+  output(lines.join('\n'));
+}
+
+function output(text) {
+  const result = {
+    hookSpecificOutput: {
+      hookEventName: 'SessionStart',
+      additionalContext: text,
+    },
+  };
+  process.stdout.write(JSON.stringify(result));
+}
+
+run().catch(err => {
+  output(`[Claudian] Error: ${err.message}`);
+});
