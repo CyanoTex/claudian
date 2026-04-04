@@ -36,9 +36,11 @@ async function run() {
 
   // Cache index for UserPromptSubmit hook (avoids rebuilding on every prompt)
   const cachePath = indexCachePath(vaultPath);
+  const pointerPath = join(tmpdir(), 'claudian', 'active-cache.txt');
   try {
     await mkdir(dirname(cachePath), { recursive: true });
     await writeFile(cachePath, JSON.stringify(index));
+    await writeFile(pointerPath, cachePath);
   } catch {
     // Non-fatal: prompt-submit will just skip matching
   }
