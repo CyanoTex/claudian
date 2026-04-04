@@ -60,7 +60,7 @@ Wait for the user's response. They can:
 - **"Show me #N"** — request full content preview of a specific note before approving
 - **"Show me all"** — request full content preview of every proposed note
 
-If the user asks to see specific notes, render the complete note content (frontmatter + body) exactly as it would be written to the vault. Do not force detail on the user, but do not withhold it when asked.
+If the user asks to see specific notes, render the complete note content (frontmatter + body) exactly as it would be written to the vault. Do not force detail on the user, but do not withhold it when asked. For large batches (8+ notes), if the user asks to "show me all," warn that this will be lengthy and offer to show them in groups of 3-4 instead.
 
 Do NOT proceed to Phase 3 without explicit approval.
 
@@ -70,7 +70,7 @@ Bulk-create all approved notes using the Write tool directly (not the vault-writ
 
 ### For each note:
 
-1. **Select the template** from `{vault}/meta/templates/` matching the note type. If templates aren't in the vault, use the plugin's `templates/` folder.
+1. **Read the template** from `{vault}/meta/templates/` matching the note type. If templates aren't in the vault, use the plugin's `templates/` folder. Read the actual template file and use it as the basis for the note — do not invent a structure from memory.
 
 2. **Write complete frontmatter:**
 
@@ -78,34 +78,40 @@ Bulk-create all approved notes using the Write tool directly (not the vault-writ
 ---
 title: "{note title}"
 type: {knowledge|architecture|pattern|gotcha|spec}
-project: {project-name}
+project: {project-name|cross-project}
 source: claude
 tags: [{relevant tags}]
 created: "{today YYYY-MM-DD}"
 updated: "{today YYYY-MM-DD}"
 visibility: {project-only|cross-project}
-relevant-to: []
+relevant-to: [{projects this note is relevant to, if cross-project}]
 links-to: [{titles of other notes in this batch that this note references}]
 ---
 ```
 
 - Use `source: claude` for all seed notes
 - Use `visibility: project-only` by default; use `cross-project` only for patterns and gotchas that clearly apply beyond this project
+- For cross-project notes, set `project: cross-project` and populate `relevant-to` with the project names this note is relevant to (at minimum, the current project)
 - Populate `links-to` with titles of other notes in the batch that this note references
 
 3. **Write the body** following the template structure. Include `[[wikilinks]]` to other notes in the batch wherever they're referenced.
 
-4. **Name the file** using kebab-case derived from the title.
+4. **Name the file** using kebab-case derived from the title. Strip leading articles (a, an, the).
+   - "Why We Use CRDT for Sync" → `why-we-use-crdt-for-sync.md`
+   - "The DataStore Session Lock Pattern" → `datastore-session-lock-pattern.md`
+   - "Module Require Ordering Gotcha" → `module-require-ordering-gotcha.md`
 
-5. **Place in the correct folder:**
+5. **Place in the correct folder** (same rules as vault-write):
+   - `knowledge` type → `{vault}/knowledge/`
    - `architecture` type → `{vault}/architecture/`
-   - `pattern` and `gotcha` types → `{vault}/knowledge/`
-   - `knowledge` and `spec` types → `{vault}/projects/{project-name}/`
-   - Cross-project notes → `{vault}/knowledge/`
+   - `spec` type → `{vault}/knowledge/`
+   - `pattern` type → `{vault}/knowledge/`
+   - `gotcha` type → `{vault}/knowledge/`
+   - Project-specific notes that are truly only about this project's internals → `{vault}/projects/{project-name}/`
 
 ### After all notes are written:
 
-6. **Update the project index** at `{vault}/projects/{project-name}/index.md` — add wikilinks to every new note under a `## Notes` section.
+6. **Update the project index** at `{vault}/projects/{project-name}/index.md` — append wikilinks to every new note under the existing `## Notes` section. Do not replace existing links — add new ones alongside them. If there is no `## Notes` section, create it.
 
 7. **Report what was created:**
 
