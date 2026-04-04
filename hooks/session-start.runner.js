@@ -1,6 +1,11 @@
+import { writeFile, mkdir } from 'fs/promises';
+import { join, dirname } from 'path';
+import { tmpdir } from 'os';
 import { loadFrom, detectProject } from '../core/config.js';
 import { buildIndex, rankNotes } from '../core/relevance.js';
 import { resolveHome } from '../core/resolver.js';
+
+export const INDEX_CACHE_PATH = join(tmpdir(), 'claudian', 'index-cache.json');
 
 const configPath = process.argv[2] || resolveHome('~/.claudian/config.yaml');
 
@@ -23,6 +28,14 @@ async function run() {
   } catch (err) {
     output(`[Claudian] Could not read vault at ${vaultPath}: ${err.message}`);
     return;
+  }
+
+  // Cache index for UserPromptSubmit hook (avoids rebuilding on every prompt)
+  try {
+    await mkdir(dirname(INDEX_CACHE_PATH), { recursive: true });
+    await writeFile(INDEX_CACHE_PATH, JSON.stringify(index));
+  } catch {
+    // Non-fatal: prompt-submit will just skip matching
   }
 
   const relevant = rankNotes(index, project, tags || []).slice(0, 20);

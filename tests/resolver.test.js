@@ -4,13 +4,13 @@ import { homedir } from 'os';
 
 describe('resolver', () => {
   describe('resolveHome', () => {
-    it('expands ~ to home directory', () => {
-      const home = homedir();
+    it('expands ~ to home directory with normalized slashes', () => {
+      const home = normalizePath(homedir());
       expect(resolveHome('~/Documents/vault')).toBe(`${home}/Documents/vault`);
     });
 
-    it('expands bare ~ to home directory', () => {
-      const home = homedir();
+    it('expands bare ~ to home directory with normalized slashes', () => {
+      const home = normalizePath(homedir());
       expect(resolveHome('~')).toBe(home);
     });
 

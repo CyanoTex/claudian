@@ -6,7 +6,7 @@ setlocal
 :: Windows: find bash and run the named hook script
 where bash >nul 2>nul
 if %errorlevel% neq 0 (
-    echo {"hookSpecificOutput":{"additionalContext":"[Claudian] bash not found on PATH"}} 1>&2
+    echo {"hookSpecificOutput":{"additionalContext":"[Claudian] bash not found on PATH"}}
     exit /b 1
 )
 

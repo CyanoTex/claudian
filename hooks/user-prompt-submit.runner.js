@@ -1,6 +1,8 @@
-import { loadFrom, detectProject } from '../core/config.js';
-import { buildIndex } from '../core/relevance.js';
-import { resolveHome } from '../core/resolver.js';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
+
+const INDEX_CACHE_PATH = join(tmpdir(), 'claudian', 'index-cache.json');
 
 export function matchKeywords(message, index) {
   const messageLower = message.toLowerCase();
@@ -38,20 +40,11 @@ async function run() {
     userMessage = input;
   }
 
-  let config;
-  try {
-    config = await loadFrom(resolveHome('~/.claudian/config.yaml'));
-  } catch {
-    emptyOutput();
-    return;
-  }
-
-  const { vault } = detectProject(config, process.cwd());
-  const vaultPath = resolveHome(vault.path);
-
+  // Read cached index from SessionStart (no filesystem scan on every prompt)
   let index;
   try {
-    index = await buildIndex(vaultPath);
+    const cached = await readFile(INDEX_CACHE_PATH, 'utf-8');
+    index = JSON.parse(cached);
   } catch {
     emptyOutput();
     return;
@@ -85,7 +78,8 @@ function emptyOutput() {
 }
 
 // Only run as main module
-const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+import { pathToFileURL } from 'url';
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   run().catch(() => emptyOutput());
 }

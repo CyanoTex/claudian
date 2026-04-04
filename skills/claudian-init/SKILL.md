@@ -92,13 +92,13 @@ The stub `index.md` should have complete frontmatter:
 ```yaml
 ---
 title: "Project - {ProjectName}"
-type: reference
+type: knowledge
 project: {project-name}
 tags: [{project-tags}]
 created: {today}
 updated: {today}
-source: observed
-visibility: project
+source: claude
+visibility: project-only
 ---
 
 # Project - {ProjectName}
@@ -122,21 +122,23 @@ Write the global config file:
 version: 1
 
 vaults:
-  - id: default
+  - name: main
     path: {absolute-vault-path}
     mode: {single|per-project}
-
-projects:
-  - name: {project-name}
-    repo: {absolute-repo-path}
-    vault: default
-    tags:
-      - {tag1}
-      - {tag2}
+    projects:
+      {project-name}:
+        repo: {absolute-repo-path}
+        tags: [{tag1}, {tag2}]
 
 capabilities:
-  obsidianCli: auto-detect
-  git: auto-detect
+  obsidian-cli: auto-detect
+  claude-mem: auto-detect
+  claudy-talky: auto-detect
+  claude-peers: auto-detect
+  pitlane-mcp: auto-detect
+  context7: auto-detect
+  superpowers: auto-detect
+  mcp-server: null
 ```
 
 Create `~/.claudian/` if it does not exist. Do not overwrite an existing config without showing the current config and asking the user to confirm.

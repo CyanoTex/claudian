@@ -32,11 +32,11 @@ Identify which type of note this content is:
 
 | Type | Use for |
 |------|---------|
+| `knowledge` | General knowledge, facts, API summaries, tool behaviour |
 | `architecture` | Design decisions, system structure, trade-off rationale |
+| `spec` | Specifications, requirements, designs |
 | `pattern` | Reusable code or process patterns |
 | `gotcha` | Bugs, footguns, surprising behaviour, integration quirks |
-| `insight` | Synthesized conclusions across sessions or projects |
-| `reference` | External facts, API summaries, tool behaviour |
 
 ### Step 2 — Read the Template
 
@@ -58,13 +58,13 @@ Every note requires these frontmatter fields:
 ```yaml
 ---
 title: <human-readable title>
-type: <architecture|pattern|gotcha|insight|reference>
+type: <knowledge|architecture|spec|pattern|gotcha>
 project: <project-name or "cross-project">
 tags: [<tag1>, <tag2>]
 created: <YYYY-MM-DD>
 updated: <YYYY-MM-DD>
-source: <observed|extracted|inferred>
-visibility: <project|cross-project>
+source: <claude|human|extracted>
+visibility: <project-only|cross-project>
 ---
 ```
 
@@ -90,11 +90,11 @@ links-to: ["Note Title One", "Note Title Two"]
 
 | Type | Folder |
 |------|--------|
+| `knowledge` | `{vault}/knowledge/` |
 | `architecture` | `{vault}/architecture/` |
+| `spec` | `{vault}/knowledge/` |
 | `pattern` | `{vault}/knowledge/` |
 | `gotcha` | `{vault}/knowledge/` |
-| `insight` | `{vault}/knowledge/` |
-| `reference` | `{vault}/knowledge/` |
 | project-specific | `{vault}/projects/{project-name}/` |
 
 ## File Naming

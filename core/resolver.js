@@ -2,9 +2,9 @@ import { homedir } from 'os';
 import { normalize } from 'path';
 
 export function resolveHome(filepath) {
-  if (filepath === '~') return homedir();
+  if (filepath === '~') return normalizePath(homedir());
   if (filepath.startsWith('~/')) {
-    return homedir() + '/' + filepath.slice(2);
+    return normalizePath(homedir() + '/' + filepath.slice(2));
   }
   return filepath;
 }
