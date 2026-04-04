@@ -1,0 +1,22 @@
+{
+  "name": "claudian-marketplace",
+
+  "owner": {
+    "name": "CyanoTex",
+    "url": "https://github.com/CyanoTex"
+  },
+
+  "metadata": {
+    "description": "Obsidian vault as Claude's second brain. Persistent, structured, interlinked knowledge across all your projects.",
+    "version": "0.1.0"
+  },
+
+  "plugins": [
+    {
+      "name": "claudian",
+      "description": "Claude Code plugin that turns an Obsidian vault into a persistent, structured knowledge layer — cross-project notes, architecture docs, patterns, gotchas, and ideas with automatic context injection.",
+      "source": "./",
+      "strict": false
+    }
+  ]
+}
