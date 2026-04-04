@@ -97,6 +97,7 @@ Every note has typed frontmatter with tags, project scope, and visibility settin
 | `/vault-extract` | Process your freeform `ideas/` notes into structured knowledge |
 | `/vault-link` | Find and create connections between notes |
 | `/vault-status` | Vault health dashboard — orphans, stale notes, coverage |
+| `/vault-seed` | Bulk-create a project's initial knowledge base from codebase analysis |
 | `/claudian-init` | First-run setup |
 
 ## Capability Escalation
