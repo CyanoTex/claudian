@@ -47,6 +47,16 @@ capabilities:
 
   afterEach(async () => {
     await rm(baseDir, { recursive: true, force: true });
+    // Clean up global pointer and cache files written by the hook runner
+    const pointerPath = join(tmpdir(), 'claudian', 'active-cache.txt');
+    try {
+      const { readFile, rm: rmFile } = await import('fs/promises');
+      const cachePath = (await readFile(pointerPath, 'utf-8')).trim();
+      await rmFile(cachePath, { force: true });
+      await rmFile(pointerPath, { force: true });
+    } catch {
+      // Pointer may not exist if test didn't reach that point
+    }
   });
 
   it('outputs valid JSON with vault context', async () => {
