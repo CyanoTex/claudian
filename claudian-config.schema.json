@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Claudian Configuration",
+  "description": "Schema for ~/.claudian/config.yaml",
+  "type": "object",
+  "required": ["version", "vaults"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "vaults": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "path", "mode"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["single", "per-project"]
+          },
+          "projects": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["repo", "tags"],
+              "properties": {
+                "repo": {
+                  "type": "string"
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "null"],
+        "enum": ["auto-detect", null]
+      }
+    }
+  }
+}
