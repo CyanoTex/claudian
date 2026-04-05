@@ -98,6 +98,7 @@ Every note has typed frontmatter with tags, project scope, and visibility settin
 | `/vault-link` | Find and create connections between notes |
 | `/vault-status` | Vault health dashboard — orphans, stale notes, coverage |
 | `/vault-seed` | Bulk-create a project's initial knowledge base from codebase analysis |
+| `/vault-stub` | Find broken wikilinks and create stub notes for them |
 | `/claudian-init` | First-run setup |
 
 ## Agents
