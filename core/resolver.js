@@ -1,5 +1,5 @@
-import { homedir } from 'os';
-import { normalize } from 'path';
+import { homedir, tmpdir } from 'os';
+import { normalize, join } from 'path';
 
 export function resolveHome(filepath) {
   if (filepath === '~') return normalizePath(homedir());
@@ -16,4 +16,10 @@ export function platformDefault() {
 
 export function normalizePath(filepath) {
   return normalize(filepath).replace(/\\/g, '/');
+}
+
+export function cachePointerPath() {
+  const raw = process.env.CLAUDE_SESSION_ID || 'default';
+  const sessionId = raw.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return join(tmpdir(), 'claudian', `active-cache-${sessionId}.txt`);
 }

@@ -1,34 +1,39 @@
 import { readdir, readFile, stat } from 'fs/promises';
 import { join, relative } from 'path';
-import { parse } from './frontmatter.js';
+import { parse, normalizeTags } from './frontmatter.js';
 import { normalizePath } from './resolver.js';
 
 export async function buildIndex(vaultDir) {
   const index = [];
+  const warnings = [];
   await walkDir(vaultDir, async (filePath) => {
     if (!filePath.endsWith('.md')) return;
 
     const relPath = normalizePath(relative(vaultDir, filePath));
     if (relPath.startsWith('.obsidian/') || relPath.startsWith('meta/templates/')) return;
 
-    const content = await readFile(filePath, 'utf-8');
-    const { frontmatter } = parse(content);
-    if (!frontmatter || !frontmatter.title) return;
+    try {
+      const content = await readFile(filePath, 'utf-8');
+      const { frontmatter } = parse(content);
+      if (!frontmatter || !frontmatter.title) return;
 
-    index.push({
-      title: frontmatter.title,
-      path: normalizePath(filePath),
-      relPath,
-      type: frontmatter.type,
-      project: frontmatter.project,
-      source: frontmatter.source,
-      tags: frontmatter.tags || [],
-      visibility: frontmatter.visibility || 'project-only',
-      'relevant-to': frontmatter['relevant-to'] || [],
-      updated: frontmatter.updated || frontmatter.created,
-    });
+      index.push({
+        title: frontmatter.title,
+        path: normalizePath(filePath),
+        relPath,
+        type: frontmatter.type,
+        project: frontmatter.project,
+        source: frontmatter.source,
+        tags: normalizeTags(frontmatter.tags),
+        visibility: frontmatter.visibility || 'project-only',
+        'relevant-to': frontmatter['relevant-to'] || [],
+        updated: frontmatter.updated || frontmatter.created,
+      });
+    } catch (err) {
+      warnings.push({ file: relPath, error: err.message });
+    }
   });
-  return index;
+  return { index, warnings };
 }
 
 export function rankNotes(index, currentProject, currentTags) {
@@ -38,7 +43,7 @@ export function rankNotes(index, currentProject, currentTags) {
     .sort((a, b) => b.score - a.score);
 }
 
-function isRelevant(note, currentProject) {
+export function isRelevant(note, currentProject) {
   if (note.project === currentProject) return true;
   if (note.project === 'cross-project' || note.visibility === 'cross-project') return true;
   if (note['relevant-to'].includes(currentProject)) return true;

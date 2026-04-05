@@ -4,7 +4,7 @@ import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { loadFrom, detectProject } from '../core/config.js';
 import { buildIndex, rankNotes } from '../core/relevance.js';
-import { resolveHome } from '../core/resolver.js';
+import { resolveHome, cachePointerPath } from '../core/resolver.js';
 
 export function indexCachePath(vaultPath) {
   const hash = createHash('md5').update(vaultPath).digest('hex').slice(0, 12);
@@ -26,9 +26,9 @@ async function run() {
   const { vault, project, tags } = detectProject(config, cwd);
   const vaultPath = resolveHome(vault.path);
 
-  let index;
+  let index, warnings;
   try {
-    index = await buildIndex(vaultPath);
+    ({ index, warnings } = await buildIndex(vaultPath));
   } catch (err) {
     output(`[Claudian] Could not read vault at ${vaultPath}: ${err.message}`);
     return;
@@ -36,10 +36,10 @@ async function run() {
 
   // Cache index for UserPromptSubmit hook (avoids rebuilding on every prompt)
   const cachePath = indexCachePath(vaultPath);
-  const pointerPath = join(tmpdir(), 'claudian', 'active-cache.txt');
+  const pointerPath = cachePointerPath();
   try {
     await mkdir(dirname(cachePath), { recursive: true });
-    await writeFile(cachePath, JSON.stringify(index));
+    await writeFile(cachePath, JSON.stringify({ project, index }));
     await writeFile(pointerPath, cachePath);
   } catch {
     // Non-fatal: prompt-submit will just skip matching
@@ -68,6 +68,15 @@ async function run() {
     lines.push(`Use vault-search to find more notes or read a specific note by path.`);
   } else {
     lines.push(`No relevant notes found. Use vault-write to start building knowledge.`);
+  }
+
+  if (warnings.length > 0) {
+    lines.push(`## Warnings`);
+    lines.push(``);
+    for (const w of warnings) {
+      lines.push(`- **${w.file}**: ${w.error}`);
+    }
+    lines.push(``);
   }
 
   output(lines.join('\n'));

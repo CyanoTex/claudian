@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { writeFile, mkdir, rm } from 'fs/promises';
+import { writeFile, mkdir, rm, readFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { cachePointerPath } from '../../core/resolver.js';
 
 const exec = promisify(execFile);
 
@@ -47,13 +48,12 @@ capabilities:
 
   afterEach(async () => {
     await rm(baseDir, { recursive: true, force: true });
-    // Clean up global pointer and cache files written by the hook runner
-    const pointerPath = join(tmpdir(), 'claudian', 'active-cache.txt');
+    // Clean up session-scoped pointer and cache files written by the hook runner
+    const pointerPath = cachePointerPath();
     try {
-      const { readFile, rm: rmFile } = await import('fs/promises');
       const cachePath = (await readFile(pointerPath, 'utf-8')).trim();
-      await rmFile(cachePath, { force: true });
-      await rmFile(pointerPath, { force: true });
+      await rm(cachePath, { force: true });
+      await rm(pointerPath, { force: true });
     } catch {
       // Pointer may not exist if test didn't reach that point
     }
@@ -79,5 +79,29 @@ capabilities:
     const { stdout } = await exec('node', [runnerPath, join(baseDir, 'nonexistent.yaml')]);
     const output = JSON.parse(stdout);
     expect(output.hookSpecificOutput.additionalContext).toContain('Config not found');
+  });
+
+  it('writes session-scoped pointer files for different sessions', async () => {
+    const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
+    const env1 = { ...process.env, CLAUDE_SESSION_ID: 'session-aaa' };
+    const env2 = { ...process.env, CLAUDE_SESSION_ID: 'session-bbb' };
+
+    await exec('node', [runnerPath, configPath], { env: env1 });
+    await exec('node', [runnerPath, configPath], { env: env2 });
+
+    const pointer1 = join(tmpdir(), 'claudian', 'active-cache-session-aaa.txt');
+    const pointer2 = join(tmpdir(), 'claudian', 'active-cache-session-bbb.txt');
+
+    const cache1 = (await readFile(pointer1, 'utf-8')).trim();
+    const cache2 = (await readFile(pointer2, 'utf-8')).trim();
+
+    expect(cache1).toBeTruthy();
+    expect(cache2).toBeTruthy();
+    expect(pointer1).not.toBe(pointer2);
+
+    await rm(pointer1, { force: true });
+    await rm(pointer2, { force: true });
+    await rm(cache1, { force: true });
+    await rm(cache2, { force: true });
   });
 });

@@ -1,6 +1,6 @@
 import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { cachePointerPath } from '../core/resolver.js';
+import { isRelevant } from '../core/relevance.js';
 
 export function matchKeywords(message, index) {
   const messageLower = message.toLowerCase();
@@ -39,12 +39,14 @@ async function run() {
   }
 
   // Read the active cache pointer written by SessionStart
-  const pointerPath = join(tmpdir(), 'claudian', 'active-cache.txt');
+  const pointerPath = cachePointerPath();
   let index;
   try {
     const cachePath = (await readFile(pointerPath, 'utf-8')).trim();
-    const cached = await readFile(cachePath, 'utf-8');
-    index = JSON.parse(cached);
+    const cached = JSON.parse(await readFile(cachePath, 'utf-8'));
+    const project = cached.project || null;
+    const fullIndex = 'index' in cached ? cached.index : cached;
+    index = fullIndex.filter(note => isRelevant(note, project));
   } catch {
     emptyOutput();
     return;

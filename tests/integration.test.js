@@ -62,7 +62,7 @@ capabilities:
     await writeFile(notePath, noteContent);
 
     // 2. Index the vault and find the note
-    const index = await buildIndex(vaultDir);
+    const { index } = await buildIndex(vaultDir);
     expect(index.some(n => n.title === 'API Rate Limiting')).toBe(true);
 
     // 3. Rank for the my-app project
