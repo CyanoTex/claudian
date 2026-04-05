@@ -20,7 +20,7 @@ description: Search the Claudian Obsidian vault by content, tags, project, or no
 ## Frontmatter Fields
 
 - `tags:` — inline (`tags: datastore, sessions`) or YAML list
-- `type:` — one of `architecture`, `pattern`, `gotcha`, `insight`, `reference`
+- `type:` — one of `knowledge`, `architecture`, `spec`, `pattern`, `gotcha`
 
 ## Structured Query Syntax
 

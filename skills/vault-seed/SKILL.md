@@ -102,11 +102,12 @@ links-to: [{titles of other notes in this batch that this note references}]
 
 ## Phase 4: Verify
 
-After all notes are written, dispatch the `vault-reviewer` agent on the newly created notes:
+After all notes are written, dispatch the `vault-reviewer` agent on the newly created notes. vault-reviewer reports findings back to you — it does not modify notes itself. You apply the fixes.
 
-1. Run vault-reviewer against the full set of written note paths
-2. If the reviewer flags issues (broken wikilinks, missing required frontmatter fields, ephemera, type violations), fix them
-3. Repeat until the reviewer passes, then report completion
+1. Dispatch vault-reviewer with the list of written note paths
+2. Read its report. If it flags issues (broken wikilinks, missing frontmatter, ephemera, type violations), fix them yourself
+3. Re-run vault-reviewer on the affected notes to confirm fixes
+4. If the same issue persists after two fix attempts, surface it to the user rather than looping again
 
 Write → review → fix loop must complete before surfacing results to the user.
 

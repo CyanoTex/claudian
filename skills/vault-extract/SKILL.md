@@ -24,7 +24,7 @@ Extract structured knowledge notes from freeform ideas in the vault's `ideas/` f
 - Decision made → `architecture` note
 - Technique that worked → `pattern` note
 - Surprising behaviour/failure → `gotcha` note
-- Conclusion → `insight` note
+- Conclusion or synthesis → `knowledge` note
 
 Purely speculative or to-do ideas don't need extraction — just flag them processed with a note explaining why.
 
@@ -42,7 +42,7 @@ List all proposals together before asking for approval.
 
 **4. Wait for approval.** Always. Ask: "Ready to create these N notes. Should I go ahead, or would you like to adjust anything first?" Revise and re-show if changes are requested.
 
-**5. Create approved notes.** Use `vault-write` for each. One call per note — never batch.
+**5. Create approved notes.** Use `vault-write` for each. Set `source: extracted` in frontmatter. One call per note — never batch.
 
 **6. Flag the original idea.** Update its frontmatter after all notes are created:
 
@@ -65,4 +65,6 @@ extraction-note: "Speculative — no durable knowledge to extract yet"
 - **Never skip approval.** Always show the proposal and wait.
 - **Never write into ideas/.** Only update frontmatter of existing files, only after approval.
 - **Never delete ideas.** Originals stay intact after extraction.
+- **One vault-write call per note.** Do not batch multiple notes into a single file.
+- **Always use `source: extracted`.** Never `claude` or `human` for notes extracted from ideas.
 - If an idea is ambiguous, ask for clarification before proposing — do not guess.
