@@ -1,6 +1,6 @@
 import { readdir, readFile, stat } from 'fs/promises';
 import { join, relative } from 'path';
-import { parse } from './frontmatter.js';
+import { parse, normalizeTags } from './frontmatter.js';
 import { normalizePath } from './resolver.js';
 
 export async function buildIndex(vaultDir) {
@@ -24,7 +24,7 @@ export async function buildIndex(vaultDir) {
         type: frontmatter.type,
         project: frontmatter.project,
         source: frontmatter.source,
-        tags: frontmatter.tags || [],
+        tags: normalizeTags(frontmatter.tags),
         visibility: frontmatter.visibility || 'project-only',
         'relevant-to': frontmatter['relevant-to'] || [],
         updated: frontmatter.updated || frontmatter.created,
