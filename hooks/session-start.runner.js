@@ -4,7 +4,7 @@ import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { loadFrom, detectProject } from '../core/config.js';
 import { buildIndex, rankNotes } from '../core/relevance.js';
-import { resolveHome } from '../core/resolver.js';
+import { resolveHome, cachePointerPath } from '../core/resolver.js';
 
 export function indexCachePath(vaultPath) {
   const hash = createHash('md5').update(vaultPath).digest('hex').slice(0, 12);
@@ -36,7 +36,7 @@ async function run() {
 
   // Cache index for UserPromptSubmit hook (avoids rebuilding on every prompt)
   const cachePath = indexCachePath(vaultPath);
-  const pointerPath = join(tmpdir(), 'claudian', 'active-cache.txt');
+  const pointerPath = cachePointerPath();
   try {
     await mkdir(dirname(cachePath), { recursive: true });
     await writeFile(cachePath, JSON.stringify(index));
