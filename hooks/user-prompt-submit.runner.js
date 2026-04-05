@@ -45,7 +45,7 @@ async function run() {
     const cachePath = (await readFile(pointerPath, 'utf-8')).trim();
     const cached = JSON.parse(await readFile(cachePath, 'utf-8'));
     const project = cached.project || null;
-    const fullIndex = cached.index || cached;
+    const fullIndex = 'index' in cached ? cached.index : cached;
     index = fullIndex.filter(note => isRelevant(note, project));
   } catch {
     emptyOutput();

@@ -19,6 +19,7 @@ export function normalizePath(filepath) {
 }
 
 export function cachePointerPath() {
-  const sessionId = process.env.CLAUDE_SESSION_ID || 'default';
+  const raw = process.env.CLAUDE_SESSION_ID || 'default';
+  const sessionId = raw.replace(/[^a-zA-Z0-9_-]/g, '_');
   return join(tmpdir(), 'claudian', `active-cache-${sessionId}.txt`);
 }
