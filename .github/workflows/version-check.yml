@@ -1,0 +1,57 @@
+name: Version Bump Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if code changed without version bump
+        run: |
+          BASE=${{ github.event.pull_request.base.sha }}
+          HEAD=${{ github.event.pull_request.head.sha }}
+
+          # Files that don't require a version bump
+          IGNORED="README.md|LICENSE|\.github/|docs/|\.gitignore|gotchas\.md|adr/"
+
+          # Check if any non-ignored files changed
+          CODE_CHANGED=$(git diff --name-only "$BASE" "$HEAD" | grep -vE "$IGNORED" | head -1)
+
+          if [ -z "$CODE_CHANGED" ]; then
+            echo "Only docs/config changed — no version bump needed."
+            exit 0
+          fi
+
+          echo "Code files changed:"
+          git diff --name-only "$BASE" "$HEAD" | grep -vE "$IGNORED"
+
+          # Check if any version file was bumped
+          VERSION_BUMPED=$(git diff --name-only "$BASE" "$HEAD" | grep -E "^(package\.json|\.claude-plugin/plugin\.json|\.claude-plugin/marketplace\.json)$" | head -1)
+
+          if [ -z "$VERSION_BUMPED" ]; then
+            echo ""
+            echo "::error::Code changed but no version bump detected. Bump the version in package.json, .claude-plugin/plugin.json, and .claude-plugin/marketplace.json. Without a version bump, the plugin cache won't refresh and users will keep running stale code."
+            exit 1
+          fi
+
+          # Check all three files agree
+          PKG_VER=$(git show "$HEAD:package.json" | grep '"version"' | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+          PLUGIN_VER=$(git show "$HEAD:.claude-plugin/plugin.json" | grep '"version"' | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+          MARKET_VER=$(git show "$HEAD:.claude-plugin/marketplace.json" | grep '"version"' | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+
+          echo ""
+          echo "Versions: package.json=$PKG_VER, plugin.json=$PLUGIN_VER, marketplace.json=$MARKET_VER"
+
+          if [ "$PKG_VER" != "$PLUGIN_VER" ] || [ "$PKG_VER" != "$MARKET_VER" ]; then
+            echo ""
+            echo "::error::Version mismatch! All three files must have the same version. package.json=$PKG_VER, plugin.json=$PLUGIN_VER, marketplace.json=$MARKET_VER"
+            exit 1
+          fi
+
+          echo "Version bump confirmed: $PKG_VER"
