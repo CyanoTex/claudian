@@ -57,48 +57,56 @@ Do NOT proceed to Phase 3 without explicit approval.
 
 ## Phase 3: Write
 
-Bulk-create all approved notes using the Write tool directly (not vault-write):
+### Step 1: Write the project index first
 
-### For each note:
+Update `{vault}/projects/{project-name}/index.md` under `## Notes` with **planned links** for every approved note. Each entry is a wikilink with an inline description:
 
-1. **Read the template** from `{vault}/meta/templates/` matching the note type. Fall back to the plugin's `templates/` folder. Use the actual file — do not invent structure from memory.
-
-2. **Write complete frontmatter:**
-
-```yaml
----
-title: "{note title}"
-type: {knowledge|architecture|pattern|gotcha|spec}
-project: {project-name|cross-project}
-source: claude
-tags: [{relevant tags}]
-created: "{today YYYY-MM-DD}"
-updated: "{today YYYY-MM-DD}"
-visibility: {project-only|cross-project}
-relevant-to: [{projects this note is relevant to, if cross-project}]
-links-to: [{titles of other notes in this batch that this note references}]
----
+```
+- [[System Architecture Overview]] — overall architecture, filesystem-first design, capability escalation
+- [[Module Map]] — the 5 core modules, their responsibilities, and dependency graph
+- [[Data Flow]] — hook-to-skill data pipeline, cache pointer handoff
 ```
 
-- `source: claude` for all seed notes
-- `visibility: project-only` by default; `cross-project` only for patterns/gotchas that clearly generalize
-- Cross-project notes: set `project: cross-project`, populate `relevant-to` with at minimum the current project
-- Populate `links-to` with other notes in this batch that this note references
+The description explains what the note should contain. Don't replace existing links. Create the section if absent. The index is always written **before** any content notes.
 
-3. **Write the body** per the template. Only `[[wikilink]]` to notes that already exist in the vault or were written earlier in this batch. Never link to planned-but-unwritten notes — see [[Dangling Wikilink Anti-Pattern]].
+### Step 2: Offer each note individually
 
-4. **Name the file** kebab-case from the title, stripping leading articles (a, an, the):
-   - "Why We Use CRDT for Sync" → `why-we-use-crdt-for-sync.md`
-   - "The DataStore Session Lock Pattern" → `datastore-session-lock-pattern.md`
+For each planned link in the index, ask the user:
 
-5. **Place in the correct folder:**
-   - `knowledge`, `spec`, `pattern`, `gotcha` → `{vault}/knowledge/`
-   - `architecture` → `{vault}/architecture/`
-   - Project-internal notes → `{vault}/projects/{project-name}/`
+```
+Create [[System Architecture Overview]]?
+  → overall architecture, filesystem-first design, capability escalation
+  (yes / not now / skip all)
+```
 
-### After all notes are written:
+- **"Yes"** → proceed to Step 3 for this note
+- **"Not now"** → leave the planned link in the index, move to the next note
+- **"Skip all"** → stop offering, leave remaining planned links for a future session
 
-6. **Update the project index** — the index is always the **last file written**. Append wikilinks to `{vault}/projects/{project-name}/index.md` under `## Notes`, but only for notes that were actually created and confirmed. Drop any planned note that wasn't written. Don't replace existing links. Create the section if absent.
+### Step 3: Create the note
+
+For each approved note, dispatch the `vault-seed-worker` agent with:
+
+- The vault path
+- The note's title, type, project, tags, visibility, folder, and filename
+- The **description from the planned link** as content guidance
+- The template file for the note type (read from `{vault}/meta/templates/`, fall back to plugin's `templates/`)
+- The codebase path so the worker can read relevant source files
+
+The worker reads the codebase, writes the note with real content, and reports back.
+
+**Naming:** kebab-case from the title, stripping leading articles (a, an, the):
+- "Why We Use CRDT for Sync" → `why-we-use-crdt-for-sync.md`
+- "The DataStore Session Lock Pattern" → `datastore-session-lock-pattern.md`
+
+**Placement:**
+- `knowledge`, `spec`, `pattern`, `gotcha` → `{vault}/knowledge/`
+- `architecture` → `{vault}/architecture/`
+- Project-internal notes → `{vault}/projects/{project-name}/`
+
+### Step 4: Update the index entry
+
+After the worker confirms the note was written, the planned link in the index is now a real link — no changes needed since the wikilink text is identical. The planned link resolves naturally once the note file exists.
 
 ## Phase 4: Verify
 
@@ -114,14 +122,17 @@ Write → review → fix loop must complete before surfacing results to the user
 **Report after verification passes:**
 
 ```
-Created {N} notes for project "{project-name}":
-  architecture/system-architecture-overview.md
-  architecture/data-flow.md
-  projects/{name}/module-map.md
-  knowledge/error-handling-pattern.md
-  knowledge/session-lock-race-condition.md
+Seeded project "{project-name}":
+  Created {N} notes:
+    architecture/system-architecture-overview.md
+    projects/{name}/module-map.md
+    knowledge/error-handling-pattern.md
 
-Project index updated. All notes passed vault-reviewer.
+  Planned (deferred for later):
+    [[Data Flow]] — hook-to-skill data pipeline, cache pointer handoff
+    [[Session Lock Race Condition]] — gotcha with concurrent session writes
+
+  All created notes passed vault-reviewer.
 ```
 
 ## Quality Gate
@@ -133,7 +144,7 @@ Each note must pass before Phase 4 review:
 - **Valid source** — claude (for seed notes)
 - **Valid visibility** — project-only or cross-project
 - **No duplicates** — skip any note whose title already exists; report it as skipped
-- **No dangling wikilinks** — every `[[wikilink]]` in a note body must resolve to an existing vault note or a note written earlier in this batch
+- **No dangling wikilinks in content notes** — every `[[wikilink]]` in a note body must resolve to an existing vault note or a note written earlier in this batch. Planned links in the index (with ` — ` descriptions) are allowed — see [[Dangling Wikilink Anti-Pattern]]
 
 ## Re-Running vault-seed
 
