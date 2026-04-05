@@ -1,6 +1,6 @@
 {
   "name": "claudian",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Obsidian vault as Claude's second brain — a Claude Code plugin for persistent, structured, interlinked knowledge.",
   "type": "module",
   "scripts": {

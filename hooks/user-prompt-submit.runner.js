@@ -1,6 +1,12 @@
 import { readFile } from 'fs/promises';
 import { cachePointerPath } from '../core/resolver.js';
-import { isRelevant } from '../core/relevance.js';
+
+function isRelevant(note, currentProject) {
+  if (note.project === currentProject) return true;
+  if (note.project === 'cross-project' || note.visibility === 'cross-project') return true;
+  if (note['relevant-to'] && note['relevant-to'].includes(currentProject)) return true;
+  return false;
+}
 
 export function matchKeywords(message, index) {
   const messageLower = message.toLowerCase();
