@@ -1,6 +1,6 @@
 ---
 name: vault-seed-worker
-description: Subagent that bulk-writes vault notes from a pre-approved list. Dispatched by vault-seed Phase 3 to offload file creation from the main session's context window.
+description: Subagent that writes vault notes from approved descriptions. Dispatched by vault-seed Phase 3 with note metadata and codebase context to produce real content.
 model: sonnet
 ---
 
@@ -41,9 +41,9 @@ For each note in the list:
 
 3. Write the file to `{vault}/{folder}/{filename}`.
 
-4. After all notes are written, update the project index at `{vault}/projects/{project}/index.md` — the index is always the **last file written**. Append wikilinks under `## Notes`, but only for notes that were actually created. Drop any note that was skipped or failed. Do not replace existing links. Create the section if absent.
+4. Report what was created: list every file path written.
 
-5. Report what was created: list every file path written.
+Do NOT modify the project index — the parent session already wrote it with planned links that resolve naturally once the note file exists.
 
 ## Rules
 

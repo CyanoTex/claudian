@@ -75,8 +75,11 @@ async function run() {
     try {
       const indexPath = join(vaultPath, 'projects', project, 'index.md');
       const indexContent = await readFile(indexPath, 'utf-8');
-      const body = indexContent.replace(/^---[\s\S]*?---/, '');
-      const wikilinks = [...body.matchAll(/\[\[([^\]]+)\]\]/g)].map(m => m[1]);
+      const body = indexContent
+        .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')  // strip frontmatter
+        .replace(/```[\s\S]*?```/g, '');                   // strip code blocks
+      const wikilinks = [...body.matchAll(/\[\[([^\]]+)\]\]/g)]
+        .map(m => m[1].split('|')[0].trim());              // handle [[target|alias]]
       const titles = new Set(index.map(n => n.title.toLowerCase()));
       const planned = wikilinks.filter(w => !titles.has(w.toLowerCase()));
       if (planned.length > 0) {
@@ -85,8 +88,10 @@ async function run() {
         lines.push(`Project index has ${planned.length} planned note(s) not yet created. Run /vault-stub to resolve.`);
         lines.push(``);
       }
-    } catch {
-      // No index file — that's fine
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        warnings.push({ file: `projects/${project}/index.md`, error: err.message });
+      }
     }
   }
 

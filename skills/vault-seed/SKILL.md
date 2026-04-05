@@ -93,6 +93,12 @@ For each approved note, dispatch the `vault-seed-worker` agent with:
 - The template file for the note type (read from `{vault}/meta/templates/`, fall back to plugin's `templates/`)
 - The codebase path so the worker can read relevant source files
 
+**Frontmatter rules for the dispatch payload:**
+- `source: claude` for all seed notes
+- `visibility: project-only` by default; `cross-project` only for patterns/gotchas that clearly generalize
+- Cross-project notes: set `project: cross-project`, populate `relevant-to` with at minimum the current project
+- Populate `links-to` with titles of existing vault notes this note will reference
+
 The worker reads the codebase, writes the note with real content, and reports back.
 
 **Naming:** kebab-case from the title, stripping leading articles (a, an, the):
