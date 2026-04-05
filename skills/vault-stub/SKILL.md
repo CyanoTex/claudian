@@ -76,13 +76,14 @@ If broken wikilinks belong to the project you're currently working in, you have 
 
 ### Other projects
 
-1. Use claudy-talky `list_agents` to find Claude sessions running in the relevant project's working directory
-2. **Session found:** Use `handoff_work` to send the note-writing task, including:
+1. If claudy-talky is unavailable (MCP server not running), treat all other-project wikilinks as "no session found" and skip to step 3.
+2. Use claudy-talky `list_agents` to find Claude sessions running in the relevant project's working directory.
+3. **Session found:** Use `handoff_work` to send the note-writing task, including:
    - The wikilink target (note title)
    - The inferred type and folder
    - The referencing notes and their content context (so the target Claude understands what's needed)
    - Instruction to use vault-write for each note
-3. **No session found:** Report to the user:
+4. **No session found:** Report to the user:
    > "No active session for project {name}. Start a Claude session in {project-path} and ask it to write these notes, or run vault-stub from there."
 
    Do **not** create empty stubs. An unresolved wikilink is better than an empty note.
