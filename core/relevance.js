@@ -38,7 +38,7 @@ export function rankNotes(index, currentProject, currentTags) {
     .sort((a, b) => b.score - a.score);
 }
 
-function isRelevant(note, currentProject) {
+export function isRelevant(note, currentProject) {
   if (note.project === currentProject) return true;
   if (note.project === 'cross-project' || note.visibility === 'cross-project') return true;
   if (note['relevant-to'].includes(currentProject)) return true;
