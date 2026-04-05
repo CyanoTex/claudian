@@ -26,9 +26,9 @@ async function run() {
   const { vault, project, tags } = detectProject(config, cwd);
   const vaultPath = resolveHome(vault.path);
 
-  let index;
+  let index, warnings;
   try {
-    index = await buildIndex(vaultPath);
+    ({ index, warnings } = await buildIndex(vaultPath));
   } catch (err) {
     output(`[Claudian] Could not read vault at ${vaultPath}: ${err.message}`);
     return;
@@ -68,6 +68,15 @@ async function run() {
     lines.push(`Use vault-search to find more notes or read a specific note by path.`);
   } else {
     lines.push(`No relevant notes found. Use vault-write to start building knowledge.`);
+  }
+
+  if (warnings.length > 0) {
+    lines.push(`## Warnings`);
+    lines.push(``);
+    for (const w of warnings) {
+      lines.push(`- **${w.file}**: ${w.error}`);
+    }
+    lines.push(``);
   }
 
   output(lines.join('\n'));

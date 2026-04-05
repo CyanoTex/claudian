@@ -35,7 +35,7 @@ links-to: []
 
 Some content about testing patterns.`);
 
-      const index = await buildIndex(vaultDir);
+      const { index } = await buildIndex(vaultDir);
       expect(index).toHaveLength(1);
       expect(index[0].title).toBe('Test Pattern');
       expect(index[0].tags).toContain('testing');
@@ -44,7 +44,7 @@ Some content about testing patterns.`);
 
     it('skips files without frontmatter', async () => {
       await writeFile(join(vaultDir, 'knowledge', 'plain.md'), 'No frontmatter here.');
-      const index = await buildIndex(vaultDir);
+      const { index } = await buildIndex(vaultDir);
       expect(index).toHaveLength(0);
     });
 
@@ -64,9 +64,39 @@ links-to: []
 
 Architecture notes.`);
 
-      const index = await buildIndex(vaultDir);
+      const { index } = await buildIndex(vaultDir);
       expect(index).toHaveLength(1);
       expect(index[0].project).toBe('my-app');
+    });
+
+    it('skips malformed notes and continues indexing', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'good-note.md'), `---
+title: Good Note
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+visibility: cross-project
+relevant-to: []
+links-to: []
+---
+
+Valid note.`);
+
+      await writeFile(join(vaultDir, 'knowledge', 'bad-note.md'), `---
+title: [invalid yaml
+  this is broken: {{{
+---
+
+Bad frontmatter.`);
+
+      const { index, warnings } = await buildIndex(vaultDir);
+      expect(index).toHaveLength(1);
+      expect(index[0].title).toBe('Good Note');
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0].file).toContain('bad-note.md');
     });
   });
 
