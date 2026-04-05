@@ -106,7 +106,7 @@ Specialized subagents that can be dispatched for focused tasks:
 
 | Agent | What it does |
 |-------|-------------|
-| `vault-seed-worker` | Bulk-writes pre-approved notes (dispatched by vault-seed Phase 3) |
+| `vault-seed-worker` | Bulk-writes a pre-approved note list for a project (used by vault-seed) |
 | `vault-gardener` | Background maintenance — links orphans, fills frontmatter gaps, syncs indexes |
 | `vault-reviewer` | Reviews recently written notes for quality, accuracy, and linking |
 

@@ -20,7 +20,7 @@ For each note, check:
 
 ### Frontmatter Quality
 - All required fields present: title, type, project, source, tags, created, updated
-- Type is valid: knowledge, architecture, idea, spec, pattern, gotcha
+- Type is valid: knowledge, architecture, spec, pattern, gotcha
 - Source is valid: claude, human, extracted
 - Visibility is valid: project-only, cross-project
 - Tags are meaningful (not generic like "misc" or "other")
@@ -40,16 +40,16 @@ For each note, check:
 
 ### File Quality
 - Filename is kebab-case derived from title
-- File is in the correct folder per type routing rules
+- File is in the correct folder: `knowledge` → `knowledge/`, `architecture` → `architecture/`, `spec`/`pattern`/`gotcha` → `knowledge/`, project-specific → `projects/{name}/`
 - No duplicate notes with the same or very similar titles
 
 ## Output
 
 Per note:
 ```
-✅ knowledge/api-rate-limiting.md — clean
-⚠️ architecture/data-flow.md — missing link to [[Module Map]], tags too generic
-❌ knowledge/debug-notes.md — appears to be session ephemera, not durable knowledge
+[OK]   knowledge/api-rate-limiting.md — clean
+[WARN] architecture/data-flow.md — missing link to [[Module Map]], tags too generic
+[FLAG] knowledge/debug-notes.md — appears to be session ephemera, not durable knowledge
 ```
 
 Summary:
@@ -57,12 +57,12 @@ Summary:
 Reviewed: 8 notes
 Clean: 6
 Warnings: 1 (fixable)
-Rejected: 1 (should be removed or rewritten)
+Flagged: 1 (needs rewrite or removal — requires human confirmation)
 ```
 
 ## Rules
 
-- Do not modify notes yourself — report findings for the parent session or vault-gardener to act on
+- Do not modify notes yourself — report findings for the parent session to act on
 - Be strict about ephemera — if it reads like a session log, flag it
 - Be lenient about style — if the content is durable and accurate, minor formatting issues are warnings not rejections
 - Check wikilink targets actually exist before flagging missing links

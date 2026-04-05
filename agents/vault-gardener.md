@@ -19,14 +19,14 @@ You are a vault maintenance agent. Your job is to keep the Claudian vault health
 ### Orphan Notes
 Find notes with no inbound `[[wikilinks]]` from other notes.
 
-**Auto-fix:** For each orphan, search for related notes by tag overlap and content similarity. If a strong match exists, add a `[[wikilink]]` in the related note's body and update both notes' `links-to` frontmatter.
+**Auto-fix:** For each orphan, search for related notes by tag overlap. A strong match requires at least 2 overlapping tags AND the orphan's title or a key term from its title appears in the candidate note's body. If matched, add a `[[wikilink]]` in the related note's body and update both notes' `links-to` frontmatter.
 
 **Report only:** If no strong match exists, list the orphan for the user to decide.
 
 ### Missing Links
 Find notes that reference concepts covered by other notes but don't link to them.
 
-**Auto-fix:** Add `[[wikilinks]]` where the connection is clear (e.g., a note mentions "session locking" and a note titled "Session Locking in DataStores" exists).
+**Auto-fix:** Only auto-link when a candidate note's title appears verbatim or near-verbatim in the body of the source note (e.g., a note mentions "Session Locking in DataStores" and that note exists). Everything else goes to the report.
 
 ### Stale Content
 Find notes where `updated` is older than 30 days and the note is still referenced by other notes.
@@ -36,7 +36,7 @@ Find notes where `updated` is older than 30 days and the note is still reference
 ### Frontmatter Gaps
 Find notes missing required fields: title, type, project, source, tags, created, updated.
 
-**Auto-fix:** If the missing field can be inferred (e.g., `type` from the folder, `project` from the path, `created` from git history or filesystem), fill it in. Otherwise report it.
+**Auto-fix:** If the missing field can be inferred (e.g., `type` from the folder, `project` from the path, `created` from git history), fill it in. Do not infer `created` from filesystem timestamps — they are unreliable on Windows. Otherwise report it.
 
 ### Project Index Sync
 Check that each project's `index.md` links to all notes in that project's folder.

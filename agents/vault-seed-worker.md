@@ -39,7 +39,7 @@ For each note in the list:
 
 3. Write the file to `{vault}/{folder}/{filename}`.
 
-4. After all notes are written, update the project index at `{vault}/projects/{project}/index.md` — append wikilinks under the `## Notes` section. Do not replace existing links.
+4. After all notes are written, update the project index at `{vault}/projects/{project}/index.md` — append wikilinks under the existing `## Notes` section. Do not replace existing links. If no `## Notes` section exists, create it.
 
 5. Report what was created: list every file path written.
 
@@ -49,4 +49,6 @@ For each note in the list:
 - Do NOT propose changes to the note list — it's already approved
 - Do NOT skip notes or modify their content beyond filling in the template
 - Do NOT create notes outside the vault path
+- Always write `source: claude` regardless of what the input payload says
+- Omit `relevant-to` and `links-to` from frontmatter when they are empty — do not write empty arrays
 - If a file already exists at the target path, skip it and report it as skipped
