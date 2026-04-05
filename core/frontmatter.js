@@ -1,4 +1,4 @@
-import yaml from 'js-yaml';
+import yaml from './yaml.js';
 
 export const VALID_TYPES = ['knowledge', 'architecture', 'idea', 'spec', 'pattern', 'gotcha'];
 export const VALID_SOURCES = ['claude', 'human', 'extracted'];

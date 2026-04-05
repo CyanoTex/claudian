@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises';
-import yaml from 'js-yaml';
+import yaml from './yaml.js';
 import { resolveHome, normalizePath } from './resolver.js';
 
 export const CONFIG_FILENAME = 'config.yaml';

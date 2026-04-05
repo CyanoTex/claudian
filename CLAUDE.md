@@ -98,6 +98,7 @@ skills/      Skill definitions (vault-write, vault-search, vault-seed, etc.)
 agents/      Subagent definitions (vault-gardener, vault-reviewer, vault-seed-worker)
 templates/   Note templates (architecture, gotcha, knowledge, pattern, spec)
 tests/       Vitest suites — mirrors core/ and hooks/ structure
+docs/        Design specs and superpowers plans
 production/  Runtime artifacts (session-logs/, gitignored)
 ```
 
@@ -108,6 +109,9 @@ Key architecture decisions:
 - Quality gate prevents ephemera from entering the vault
 - Capability escalation: filesystem always, claudy-talky/Obsidian CLI/
   claude-mem when available
+- Planned wikilinks: vault-seed writes index first with described links,
+  offers notes individually (yes/not now/skip all), deferred notes
+  persist for future sessions. SessionStart nudges unresolved links.
 
 Plugin distribution: marketplace at CyanoTex/claudian. Version must bump
 in all 3 files for cache refresh — CI enforces this on PRs:
@@ -118,7 +122,8 @@ in all 3 files for cache refresh — CI enforces this on PRs:
 ## Dependencies & Stack
 
 - ESM (`"type": "module"` in package.json). Node >=18.
-- Runtime dep: js-yaml (frontmatter parsing).
+- Zero runtime dependencies. YAML parsing uses `core/yaml.js`, a minimal
+  inline parser/dumper covering the subset needed by frontmatter and config.
 - Dev dep: vitest (test runner).
 - Hooks must use Node builtins only — no external imports (CI enforces).
 - Document every dependency choice and why. No silent `npm install`.
