@@ -33,6 +33,7 @@ Do not flag these as broken:
 - Wikilinks inside fenced code blocks (`` ``` ``) or inline code (`` ` ``)
 - Project index self-references (`[[Project - ProjectName]]` in the project's own index)
 - Wikilinks under 4 characters or matching common placeholder patterns (`[[Foo]]`, `[[Bar]]`, `[[example]]`, `[[Note Title]]`)
+- Template-style placeholders containing hyphens as word separators with no spaces (`[[pattern-name]]`, `[[project-name]]`) or generic variable-like names (`[[Project - ProjectName]]`)
 
 ## Phase 2 — Propose
 
