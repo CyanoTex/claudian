@@ -100,6 +100,16 @@ Every note has typed frontmatter with tags, project scope, and visibility settin
 | `/vault-seed` | Bulk-create a project's initial knowledge base from codebase analysis |
 | `/claudian-init` | First-run setup |
 
+## Agents
+
+Specialized subagents that can be dispatched for focused tasks:
+
+| Agent | What it does |
+|-------|-------------|
+| `vault-seed-worker` | Bulk-writes a pre-approved note list for a project (used by vault-seed) |
+| `vault-gardener` | Background maintenance — links orphans, fills frontmatter gaps, syncs indexes |
+| `vault-reviewer` | Reviews recently written notes for quality, accuracy, and linking |
+
 ## Capability Escalation
 
 Claudian works with just the filesystem. When more tools are available, it uses them:
