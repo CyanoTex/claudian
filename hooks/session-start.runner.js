@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { writeFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { loadFrom, detectProject } from '../core/config.js';
@@ -68,6 +68,31 @@ async function run() {
     lines.push(`Use vault-search to find more notes or read a specific note by path.`);
   } else {
     lines.push(`No relevant notes found. Use vault-write to start building knowledge.`);
+  }
+
+  // Detect planned links in project index
+  if (project) {
+    try {
+      const indexPath = join(vaultPath, 'projects', project, 'index.md');
+      const indexContent = await readFile(indexPath, 'utf-8');
+      const body = indexContent
+        .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')  // strip frontmatter
+        .replace(/```[\s\S]*?```/g, '');                   // strip code blocks
+      const wikilinks = [...body.matchAll(/\[\[([^\]]+)\]\]/g)]
+        .map(m => m[1].split('|')[0].trim());              // handle [[target|alias]]
+      const titles = new Set(index.map(n => n.title.toLowerCase()));
+      const planned = wikilinks.filter(w => !titles.has(w.toLowerCase()));
+      if (planned.length > 0) {
+        lines.push(`## Planned Notes`);
+        lines.push(``);
+        lines.push(`Project index has ${planned.length} planned note(s) not yet created. Run /vault-stub to resolve.`);
+        lines.push(``);
+      }
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        warnings.push({ file: `projects/${project}/index.md`, error: err.message });
+      }
+    }
   }
 
   if (warnings.length > 0) {

@@ -1,7 +1,7 @@
 ---
 name: vault-stub
 description: This skill should be used when the user asks to "fix broken wikilinks", "create missing notes", "fill grey nodes", "stub out missing notes", "resolve unlinked references", or when Obsidian's graph view shows unresolved nodes after vault-seed or bulk vault-write operations.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # vault-stub
@@ -28,6 +28,7 @@ vault-stub is a **coordination skill**. It identifies what's missing, then dispa
 4. Build a title index mapping every existing note title (case-insensitive) and filename to its path
 5. Check each wikilink target against the index for title or filename match
 6. Collect all unresolved targets with the files that reference them
+7. For each unresolved target, check if the referencing line has a description after ` — `. If so, mark it as a **planned link** and capture the description
 
 ### Skip List
 
@@ -39,15 +40,21 @@ Do not flag these as broken:
 
 ## Phase 2 — Propose
 
-Present unresolved wikilinks grouped by project:
+Present unresolved wikilinks grouped by project. Distinguish planned links (have descriptions) from bare broken links:
 
 ```
-Broken wikilinks found:
+Unresolved wikilinks found:
 
+Planned (have descriptions):
+| # | Wikilink Target          | Description                              | Project   | Inferred Type |
+|---|--------------------------|------------------------------------------|-----------|---------------|
+| 1 | System Architecture      | overall architecture, filesystem-first   | claudian  | architecture  |
+| 2 | Module Map               | the 5 core modules and dependency graph  | claudian  | knowledge     |
+
+Bare (no description — may be accidental):
 | # | Wikilink Target          | Referenced By                    | Project   | Inferred Type |
 |---|--------------------------|----------------------------------|-----------|---------------|
-| 1 | Session Lock Deep Dive   | projects/osrps/data-flow.md      | osrps     | knowledge     |
-| 2 | Rate Limiting Gotcha     | knowledge/api-patterns.md        | (cross)   | gotcha        |
+| 3 | Rate Limiting Gotcha     | knowledge/api-patterns.md        | (cross)   | gotcha        |
 
 Approve to dispatch, modify, or skip individual entries.
 ```
@@ -81,6 +88,7 @@ If broken wikilinks belong to the project you're currently working in, you have 
 3. **Session found:** Use `handoff_work` to send the note-writing task, including:
    - The wikilink target (note title)
    - The inferred type and folder
+   - The **description** from the planned link (if available) — this is the primary content guidance
    - The referencing notes and their content context (so the target Claude understands what's needed)
    - Instruction to use vault-write for each note
 4. **No session found:** Report to the user:
