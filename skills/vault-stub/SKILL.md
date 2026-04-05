@@ -1,12 +1,14 @@
 ---
 name: vault-stub
 description: This skill should be used when the user asks to "fix broken wikilinks", "create missing notes", "fill grey nodes", "stub out missing notes", "resolve unlinked references", or when Obsidian's graph view shows unresolved nodes after vault-seed or bulk vault-write operations.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # vault-stub
 
-Scan the vault for broken `[[wikilinks]]` — references in body text that point to notes that don't exist — and create stub notes so they become real nodes in Obsidian's graph.
+Scan the vault for broken `[[wikilinks]]` and coordinate with project-context Claude sessions to resolve them with real content — not empty stubs.
+
+vault-stub is a **coordination skill**. It identifies what's missing, then dispatches the actual writing to Claude sessions that have the codebase context to produce meaningful notes. See [[Dangling Wikilink Anti-Pattern]].
 
 ## When to Use
 
@@ -37,17 +39,17 @@ Do not flag these as broken:
 
 ## Phase 2 — Propose
 
-Present unresolved wikilinks grouped by inferred project:
+Present unresolved wikilinks grouped by project:
 
 ```
 Broken wikilinks found:
 
-| # | Wikilink Target          | Referenced By                    | Suggested Type | Suggested Folder          |
-|---|--------------------------|----------------------------------|----------------|---------------------------|
-| 1 | Session Lock Deep Dive   | projects/osrps/data-flow.md      | knowledge      | projects/osrps/           |
-| 2 | Rate Limiting Gotcha     | knowledge/api-patterns.md        | gotcha         | knowledge/                |
+| # | Wikilink Target          | Referenced By                    | Project   | Inferred Type |
+|---|--------------------------|----------------------------------|-----------|---------------|
+| 1 | Session Lock Deep Dive   | projects/osrps/data-flow.md      | osrps     | knowledge     |
+| 2 | Rate Limiting Gotcha     | knowledge/api-patterns.md        | (cross)   | gotcha        |
 
-Create stubs? Approve, modify, or skip individual entries.
+Approve to dispatch, modify, or skip individual entries.
 ```
 
 **Type inference rules:**
@@ -57,75 +59,59 @@ Create stubs? Approve, modify, or skip individual entries.
 - Target appears in a project-specific note → same project, `knowledge` type
 - Default: `knowledge`
 
-**Folder inference rules:**
-- All referencing notes from one project → `projects/{project}/`
-- Referenced by notes from multiple projects → `knowledge/`
-- Architecture-type stubs → `architecture/`
+**Project inference:**
+- All referencing notes from one project → that project
+- Referenced by notes from multiple projects → cross-project
+- Check `project` frontmatter in referencing notes
 
 Wait for user approval before proceeding.
 
-## Phase 3 — Create Stubs
+## Phase 3 — Dispatch
 
-For each approved stub:
+vault-stub does **not** write notes itself for other projects. It coordinates with Claude sessions that have the codebase context to produce meaningful content.
 
-1. Read the template from `{vault}/meta/templates/` matching the inferred type.
+### Current project (cwd matches a registered project)
 
-2. Assemble frontmatter:
+If broken wikilinks belong to the project you're currently working in, you have the codebase context. Write the notes directly using vault-write, with real content derived from reading the relevant code and docs.
 
-```yaml
----
-title: "{wikilink target text}"
-type: {inferred type}
-project: {inferred project or cross-project}
-source: claude
-tags: [{inferred from referencing notes — shared tags, minimum 1}]
-created: "{today YYYY-MM-DD}"
-updated: "{today YYYY-MM-DD}"
-visibility: {project-only if single project, cross-project if multi}
-links-to: ["{titles of notes that reference this stub}"]
----
-```
+### Other projects
 
-3. Write a minimal body following the template structure, with TODO markers for content:
+1. Use claudy-talky `list_agents` to find Claude sessions running in the relevant project's working directory
+2. **Session found:** Use `handoff_work` to send the note-writing task, including:
+   - The wikilink target (note title)
+   - The inferred type and folder
+   - The referencing notes and their content context (so the target Claude understands what's needed)
+   - Instruction to use vault-write for each note
+3. **No session found:** Report to the user:
+   > "No active session for project {name}. Start a Claude session in {project-path} and ask it to write these notes, or run vault-stub from there."
 
-```markdown
-## Summary
+   Do **not** create empty stubs. An unresolved wikilink is better than an empty note.
 
-Stub — referenced by [[Referencing Note Title]]. Needs content.
+### Never do this
 
-## Details
-
-<!-- TODO: flesh out this stub with vault-write -->
-
-## References
-
-- [[Referencing Note Title]]
-```
-
-For `gotcha` type, use the gotcha template sections (`## The Gotcha`, `## How to Detect`, etc.) with TODO markers.
-For `pattern` type, use the pattern template sections (`## Problem`, `## Solution`, etc.) with TODO markers.
-
-4. Name the file using kebab-case from the wikilink target title, stripping leading articles.
-
-5. Append the new stub to `{vault}/projects/{project}/index.md` under `## Notes`:
-   - `[[Note Title]] — stub, needs content`
-
-6. In the referencing note(s), add the stub's title to `links-to` frontmatter if not already present.
+- Write files with TODO markers or "stub, needs content" placeholders
+- Create 0-byte files to "resolve" graph nodes
+- Write generic placeholder content without codebase context
+- Create notes for projects whose codebase you haven't read
 
 ## Phase 4 — Report
 
 ```
-Created {N} stub notes:
-  projects/osrps/session-lock-deep-dive.md (stub)
-  knowledge/rate-limiting-gotcha.md (stub)
+Resolved {N} broken wikilinks:
 
-Stubs need content — flesh out with vault-write or let vault-gardener flag for review.
+  Current project ({project}):
+    knowledge/session-lock-deep-dive.md — written with content
+
+  Dispatched to other sessions:
+    osrps (agent {id}): 3 notes handed off
+    bloxus: no active session — 2 notes deferred
+
+  Remaining unresolved: {N} (no project session available)
 ```
 
 ## Quality Rules
 
-- Stubs pass the same frontmatter validation as vault-write (required fields, valid enums)
-- Stubs are never cross-project unless referenced by multiple projects
+- Every note written must have real content — no TODO markers, no placeholder text
+- Notes pass the same frontmatter validation as vault-write (required fields, valid enums)
 - Never overwrite an existing note — skip if a file exists at the target path
-- Infer tags from referencing notes' tags (intersection of shared tags, minimum 1)
-- If no tags can be inferred, use the referencing note's project name as a tag
+- An unresolved wikilink is always preferable to an empty or shallow note

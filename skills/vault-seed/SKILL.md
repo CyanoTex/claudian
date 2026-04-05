@@ -85,7 +85,7 @@ links-to: [{titles of other notes in this batch that this note references}]
 - Cross-project notes: set `project: cross-project`, populate `relevant-to` with at minimum the current project
 - Populate `links-to` with other notes in this batch that this note references
 
-3. **Write the body** per the template. Use `[[wikilinks]]` to other batch notes wherever referenced.
+3. **Write the body** per the template. Only `[[wikilink]]` to notes that already exist in the vault or were written earlier in this batch. Never link to planned-but-unwritten notes — see [[Dangling Wikilink Anti-Pattern]].
 
 4. **Name the file** kebab-case from the title, stripping leading articles (a, an, the):
    - "Why We Use CRDT for Sync" → `why-we-use-crdt-for-sync.md`
@@ -98,7 +98,7 @@ links-to: [{titles of other notes in this batch that this note references}]
 
 ### After all notes are written:
 
-6. **Update the project index** at `{vault}/projects/{project-name}/index.md` — append wikilinks to every new note under `## Notes`. Don't replace existing links. Create the section if absent.
+6. **Update the project index** — the index is always the **last file written**. Append wikilinks to `{vault}/projects/{project-name}/index.md` under `## Notes`, but only for notes that were actually created and confirmed. Drop any planned note that wasn't written. Don't replace existing links. Create the section if absent.
 
 ## Phase 4: Verify
 
@@ -133,6 +133,7 @@ Each note must pass before Phase 4 review:
 - **Valid source** — claude (for seed notes)
 - **Valid visibility** — project-only or cross-project
 - **No duplicates** — skip any note whose title already exists; report it as skipped
+- **No dangling wikilinks** — every `[[wikilink]]` in a note body must resolve to an existing vault note or a note written earlier in this batch
 
 ## Re-Running vault-seed
 
