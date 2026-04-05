@@ -48,6 +48,24 @@ Some content about testing patterns.`);
       expect(index).toHaveLength(0);
     });
 
+    it('normalizes inline comma-separated tags to array', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'inline-tags.md'), `---
+title: Inline Tags Note
+type: knowledge
+project: cross-project
+source: human
+tags: datastore, sessions
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+Content.`);
+
+      const index = await buildIndex(vaultDir);
+      expect(index).toHaveLength(1);
+      expect(index[0].tags).toEqual(['datastore', 'sessions']);
+    });
+
     it('indexes notes in nested project folders', async () => {
       await writeFile(join(vaultDir, 'projects', 'my-app', 'architecture.md'), `---
 title: App Architecture

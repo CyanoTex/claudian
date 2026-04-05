@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parse, generate, validate, VALID_TYPES, VALID_SOURCES } from '../core/frontmatter.js';
+import { parse, generate, validate, normalizeTags, VALID_TYPES, VALID_SOURCES } from '../core/frontmatter.js';
 
 describe('frontmatter', () => {
   const validFrontmatter = {
@@ -61,6 +61,30 @@ title: Empty
       expect(parsed.frontmatter.title).toBe('Test Note');
       expect(parsed.frontmatter.type).toBe('knowledge');
       expect(parsed.body).toBe('Some body content.');
+    });
+  });
+
+  describe('normalizeTags', () => {
+    it('passes arrays through unchanged', () => {
+      expect(normalizeTags(['a', 'b'])).toEqual(['a', 'b']);
+    });
+
+    it('splits comma-separated strings into arrays', () => {
+      expect(normalizeTags('datastore, sessions')).toEqual(['datastore', 'sessions']);
+    });
+
+    it('trims whitespace from split tags', () => {
+      expect(normalizeTags('  foo ,  bar , baz  ')).toEqual(['foo', 'bar', 'baz']);
+    });
+
+    it('returns empty array for null or undefined', () => {
+      expect(normalizeTags(null)).toEqual([]);
+      expect(normalizeTags(undefined)).toEqual([]);
+    });
+
+    it('returns empty array for non-string non-array values', () => {
+      expect(normalizeTags(42)).toEqual([]);
+      expect(normalizeTags({})).toEqual([]);
     });
   });
 
