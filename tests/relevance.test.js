@@ -61,7 +61,7 @@ updated: '2026-04-04'
 
 Content.`);
 
-      const index = await buildIndex(vaultDir);
+      const { index } = await buildIndex(vaultDir);
       expect(index).toHaveLength(1);
       expect(index[0].tags).toEqual(['datastore', 'sessions']);
     });
