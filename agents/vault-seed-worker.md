@@ -35,11 +35,11 @@ For each note in the list:
    ---
    ```
 
-2. Write the body using the template structure. Include `[[wikilinks]]` to other notes in the batch where referenced.
+2. Write the body using the template structure. Only `[[wikilink]]` to notes that already exist in the vault or were written earlier in this batch. Never link to planned-but-unwritten notes.
 
 3. Write the file to `{vault}/{folder}/{filename}`.
 
-4. After all notes are written, update the project index at `{vault}/projects/{project}/index.md` — append wikilinks under the existing `## Notes` section. Do not replace existing links. If no `## Notes` section exists, create it.
+4. After all notes are written, update the project index at `{vault}/projects/{project}/index.md` — the index is always the **last file written**. Append wikilinks under `## Notes`, but only for notes that were actually created. Drop any note that was skipped or failed. Do not replace existing links. Create the section if absent.
 
 5. Report what was created: list every file path written.
 

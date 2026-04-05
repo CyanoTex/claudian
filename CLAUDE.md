@@ -76,26 +76,63 @@ can't enforce: how you think, how you plan, how you manage context.
 
 ## Project: Claudian
 
-Claudian lives in the gap between Obsidian and Claude Code. The ecosystem
-today is fragmented — 20+ MCP servers, none canonical; no bidirectional
-sync; nothing in the official plugin registry. Scope and direction are
-still being defined. Update this section as the vision solidifies.
+Claudian is a Claude Code plugin that turns an Obsidian vault into a
+persistent, structured knowledge layer across all projects. Hooks inject
+vault context automatically; skills write/search/maintain notes; agents
+handle bulk operations. The vault is plain markdown with YAML frontmatter,
+readable by both Claude and Obsidian.
+
+### Commands
+
+```bash
+npm test          # vitest run (all tests)
+npm run test:watch # vitest in watch mode
+```
+
+### Directory Structure
+
+```
+core/        Agent-agnostic modules (config, frontmatter, quality-gate, relevance, resolver)
+hooks/       SessionStart + UserPromptSubmit runners, hooks.json config, run-hook.cmd wrapper
+skills/      Skill definitions (vault-write, vault-search, vault-seed, etc.)
+agents/      Subagent definitions (vault-gardener, vault-reviewer, vault-seed-worker)
+templates/   Note templates (architecture, gotcha, knowledge, pattern, spec)
+tests/       Vitest suites — mirrors core/ and hooks/ structure
+production/  Runtime artifacts (session-logs/, gitignored)
+```
+
+Key architecture decisions:
+- Two-layer design: agent-agnostic core + thin Claude Code adapter
+- SessionStart builds index and writes cache pointer; UserPromptSubmit
+  reads pointer using only Node builtins (no external deps in hot path)
+- Quality gate prevents ephemera from entering the vault
+- Capability escalation: filesystem always, claudy-talky/Obsidian CLI/
+  claude-mem when available
+
+Plugin distribution: marketplace at CyanoTex/claudian. Version must bump
+in all 3 files for cache refresh — CI enforces this on PRs:
+- `package.json` (root)
+- `.claude-plugin/plugin.json`
+- `.claude-plugin/marketplace.json`
 
 ## Dependencies & Stack
 
+- ESM (`"type": "module"` in package.json). Node >=18.
+- Runtime dep: js-yaml (frontmatter parsing).
+- Dev dep: vitest (test runner).
+- Hooks must use Node builtins only — no external imports (CI enforces).
 - Document every dependency choice and why. No silent `npm install`.
-- Prefer small, well-maintained packages over kitchen-sink frameworks.
 - Pin versions. Lock files are not optional.
 
 ## Architecture Decisions
 
-- Record non-obvious architectural decisions inline in an `adr/` folder
-  using lightweight ADR format (context, decision, consequences). One file
-  per decision. These outlast memory and comments.
+- Record non-obvious architectural decisions in `adr/` (created on first
+  entry) using lightweight ADR format (context, decision, consequences).
+  One file per decision.
 - When two reasonable approaches exist: present both with tradeoffs. Don't
   pick silently.
 
 ## Gotchas Log
 
-- Maintained in `gotchas.md` per the Self-Correction section above.
-  Created on first entry, not preemptively.
+- Maintained in `gotchas.md` (created on first entry, not preemptively)
+  per the Self-Correction section above.
