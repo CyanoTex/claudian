@@ -39,7 +39,7 @@ async function run() {
   const pointerPath = cachePointerPath();
   try {
     await mkdir(dirname(cachePath), { recursive: true });
-    await writeFile(cachePath, JSON.stringify(index));
+    await writeFile(cachePath, JSON.stringify({ project, index }));
     await writeFile(pointerPath, cachePath);
   } catch {
     // Non-fatal: prompt-submit will just skip matching

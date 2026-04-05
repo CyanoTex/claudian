@@ -1,5 +1,6 @@
 import { readFile } from 'fs/promises';
 import { cachePointerPath } from '../core/resolver.js';
+import { isRelevant } from '../core/relevance.js';
 
 export function matchKeywords(message, index) {
   const messageLower = message.toLowerCase();
@@ -42,8 +43,10 @@ async function run() {
   let index;
   try {
     const cachePath = (await readFile(pointerPath, 'utf-8')).trim();
-    const cached = await readFile(cachePath, 'utf-8');
-    index = JSON.parse(cached);
+    const cached = JSON.parse(await readFile(cachePath, 'utf-8'));
+    const project = cached.project || null;
+    const fullIndex = cached.index || cached;
+    index = fullIndex.filter(note => isRelevant(note, project));
   } catch {
     emptyOutput();
     return;
