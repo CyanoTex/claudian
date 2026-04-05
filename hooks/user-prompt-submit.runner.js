@@ -1,6 +1,5 @@
 import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { cachePointerPath } from '../core/resolver.js';
 
 export function matchKeywords(message, index) {
   const messageLower = message.toLowerCase();
@@ -39,7 +38,7 @@ async function run() {
   }
 
   // Read the active cache pointer written by SessionStart
-  const pointerPath = join(tmpdir(), 'claudian', 'active-cache.txt');
+  const pointerPath = cachePointerPath();
   let index;
   try {
     const cachePath = (await readFile(pointerPath, 'utf-8')).trim();

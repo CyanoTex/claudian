@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { resolveHome, platformDefault, normalizePath } from '../core/resolver.js';
-import { homedir } from 'os';
+import { resolveHome, platformDefault, normalizePath, cachePointerPath } from '../core/resolver.js';
+import { homedir, tmpdir } from 'os';
+import { join } from 'path';
 
 describe('resolver', () => {
   describe('resolveHome', () => {
@@ -41,6 +42,38 @@ describe('resolver', () => {
 
     it('collapses redundant separators', () => {
       expect(normalizePath('path//to///vault')).toBe('path/to/vault');
+    });
+  });
+
+  describe('cachePointerPath', () => {
+    const origEnv = process.env.CLAUDE_SESSION_ID;
+
+    afterEach(() => {
+      if (origEnv === undefined) {
+        delete process.env.CLAUDE_SESSION_ID;
+      } else {
+        process.env.CLAUDE_SESSION_ID = origEnv;
+      }
+    });
+
+    it('defaults to active-cache-default.txt when no session ID set', () => {
+      delete process.env.CLAUDE_SESSION_ID;
+      const result = cachePointerPath();
+      expect(result).toBe(join(tmpdir(), 'claudian', 'active-cache-default.txt'));
+    });
+
+    it('includes session ID in filename when CLAUDE_SESSION_ID is set', () => {
+      process.env.CLAUDE_SESSION_ID = 'abc-123';
+      const result = cachePointerPath();
+      expect(result).toBe(join(tmpdir(), 'claudian', 'active-cache-abc-123.txt'));
+    });
+
+    it('produces different paths for different session IDs', () => {
+      process.env.CLAUDE_SESSION_ID = 'session-A';
+      const pathA = cachePointerPath();
+      process.env.CLAUDE_SESSION_ID = 'session-B';
+      const pathB = cachePointerPath();
+      expect(pathA).not.toBe(pathB);
     });
   });
 });
