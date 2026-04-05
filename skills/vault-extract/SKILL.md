@@ -5,77 +5,54 @@ description: Process the user's freeform notes in the vault's ideas/ folder into
 
 # vault-extract
 
-Extract structured knowledge notes from the user's freeform ideas in the vault's `ideas/` folder.
+Extract structured knowledge notes from freeform ideas in the vault's `ideas/` folder.
 
 ## The ideas/ Folder
 
-The `ideas/` folder belongs entirely to the user. It is their private scratchpad — freeform writing, raw thoughts, half-formed plans. Claude reads this folder but **NEVER writes directly into it**. The only exception is setting `processed: true` in frontmatter after the user approves extraction, which requires explicit user approval first.
+`ideas/` belongs entirely to the user — their private scratchpad. Claude reads it but **NEVER writes into it**. The only write allowed is setting `processed: true` in frontmatter after explicit user approval.
 
 ## When to Use
 
-- SessionStart flagged one or more notes in `ideas/` that don't have `processed: true`
-- The user says something like "look at my ideas" or "process my notes"
-- The user asks Claude to turn a rough idea into a structured note
+- SessionStart flagged notes in `ideas/` without `processed: true`
+- User says "look at my ideas" or "process my notes"
 
 ## Extraction Flow
 
-### Step 1 — Read the Idea
+**1. Read the idea.** Understand what the user was capturing.
 
-Read the idea file in full. Understand what the user was capturing — the domain, the problem, the insight, the question.
+**2. Identify extractable knowledge.** One idea may yield multiple notes:
+- Decision made → `architecture` note
+- Technique that worked → `pattern` note
+- Surprising behaviour/failure → `gotcha` note
+- Conclusion or synthesis → `knowledge` note
 
-### Step 2 — Identify Extractable Knowledge
+Purely speculative or to-do ideas don't need extraction — just flag them processed with a note explaining why.
 
-Determine what structured knowledge lives inside this idea. One idea may yield multiple notes. Look for:
-
-- A decision that was made (→ `architecture` note)
-- A technique that worked (→ `pattern` note)
-- A surprising behaviour or failure (→ `gotcha` note)
-- A conclusion about something (→ `insight` note)
-
-Some ideas are purely speculative or to-do — these don't need extraction, just flag them as processed with a note explaining why.
-
-### Step 3 — Propose Structured Notes
-
-Show the user exactly what would be created before creating anything. For each proposed note, show:
+**3. Propose structured notes.** Show the user what would be created before creating anything:
 
 ```
 Proposed note: <title>
 Type: <type>
 Folder: <destination folder>
 Tags: [<tags>]
-Summary: <1-2 sentence description of the content>
+Summary: <1-2 sentence description>
 ```
 
-If multiple notes would be created, list all of them together before asking for approval.
+List all proposals together before asking for approval.
 
-### Step 4 — Wait for User Approval
+**4. Wait for approval.** Always. Ask: "Ready to create these N notes. Should I go ahead, or would you like to adjust anything first?" Revise and re-show if changes are requested.
 
-**Always wait.** Do not create any notes until the user explicitly approves. This is not optional.
+**5. Create approved notes.** Use `vault-write` for each. Set `source: extracted` in frontmatter. One call per note — never batch.
 
-Say something like: "Ready to create these N notes. Should I go ahead, or would you like to adjust anything first?"
-
-If the user wants changes, revise the proposal and show it again before proceeding.
-
-### Step 5 — Create the Approved Notes
-
-Use `vault-write` for each approved note. Follow all vault-write conventions:
-- Complete frontmatter including `source: extracted`
-- Correct folder placement
-- Wikilinks to related notes
-- Kebab-case filename from title
-
-### Step 6 — Flag the Original Idea
-
-After all notes are created, update the original idea file's frontmatter:
+**6. Flag the original idea.** Update its frontmatter after all notes are created:
 
 ```yaml
 processed: true
 extracted-to:
   - "Title of First Note"
-  - "Title of Second Note"
 ```
 
-If the idea was skipped (no extractable knowledge), still mark it:
+If skipped (no extractable knowledge):
 
 ```yaml
 processed: true
@@ -85,8 +62,9 @@ extraction-note: "Speculative — no durable knowledge to extract yet"
 
 ## Key Rules
 
-- **Never skip Step 4.** Always show the proposal and wait for approval.
-- **Never write into ideas/.** Only update frontmatter of existing idea files, and only after approval.
-- **Never delete ideas.** Even after extraction, the original idea stays intact.
+- **Never skip approval.** Always show the proposal and wait.
+- **Never write into ideas/.** Only update frontmatter of existing files, only after approval.
+- **Never delete ideas.** Originals stay intact after extraction.
 - **One vault-write call per note.** Do not batch multiple notes into a single file.
-- If an idea is ambiguous, ask the user for clarification before proposing notes — do not guess.
+- **Always use `source: extracted`.** Never `claude` or `human` for notes extracted from ideas.
+- If an idea is ambiguous, ask for clarification before proposing — do not guess.
