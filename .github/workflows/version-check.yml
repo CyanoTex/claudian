@@ -55,3 +55,62 @@ jobs:
           fi
 
           echo "Version bump confirmed: $PKG_VER"
+
+  check-hook-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check hooks only import Node builtins
+        run: |
+          # Node builtin modules (no node_modules in plugin cache)
+          BUILTINS="fs|fs/promises|path|os|crypto|url|util|stream|events|buffer|child_process|http|https|net|tls|dns|assert|zlib|querystring|string_decoder|timers|worker_threads"
+
+          FAILED=0
+
+          for HOOK in hooks/*.runner.js; do
+            [ -f "$HOOK" ] || continue
+            echo "Checking $HOOK..."
+
+            # Trace all imports recursively within the project
+            check_file() {
+              local file="$1"
+              local visited="$2"
+
+              # Skip if already visited (circular import protection)
+              echo "$visited" | grep -qF "$file" && return 0
+
+              # Extract import sources
+              grep -oP "from ['\"]([^'\"]+)['\"]" "$file" 2>/dev/null | sed "s/from ['\"]//;s/['\"]$//" | while read -r imp; do
+                # Skip Node builtins
+                if echo "$imp" | grep -qE "^($BUILTINS)$"; then
+                  continue
+                fi
+
+                # Relative import — resolve and check recursively
+                if echo "$imp" | grep -qE "^\.\.?/"; then
+                  local dir
+                  dir=$(dirname "$file")
+                  local resolved="$dir/$imp"
+
+                  if [ -f "$resolved" ]; then
+                    check_file "$resolved" "$visited|$file"
+                  fi
+                  continue
+                fi
+
+                # Non-builtin, non-relative = external package
+                echo "::error file=$HOOK::Hook '$HOOK' transitively imports external package '$imp' (via $file). Hooks run from the plugin cache which has no node_modules. Inline the needed code or restructure to avoid this import."
+                # Signal failure via temp file (subshell can't set parent vars)
+                touch /tmp/hook_deps_failed
+              done
+            }
+
+            check_file "$HOOK" ""
+          done
+
+          if [ -f /tmp/hook_deps_failed ]; then
+            exit 1
+          fi
+
+          echo "All hooks use only Node builtins. Clean."
