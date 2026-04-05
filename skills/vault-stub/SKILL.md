@@ -1,6 +1,7 @@
 ---
 name: vault-stub
-description: Find wikilinks pointing to non-existent notes and create stub notes for them. Use when Obsidian's graph view shows grey/unresolved nodes, or after bulk writes that may reference notes not yet created.
+description: This skill should be used when the user asks to "fix broken wikilinks", "create missing notes", "fill grey nodes", "stub out missing notes", "resolve unlinked references", or when Obsidian's graph view shows unresolved nodes after vault-seed or bulk vault-write operations.
+version: 0.1.0
 ---
 
 # vault-stub
@@ -16,14 +17,14 @@ Scan the vault for broken `[[wikilinks]]` — references in body text that point
 
 ## Phase 1 — Scan
 
-1. Read `~/.claudian/config.yaml` to find the vault path
+1. Load `~/.claudian/config.yaml` to find the vault path
 2. Walk every `.md` file in the vault (exclude `.obsidian/` and `meta/templates/`)
 3. For each file, extract:
    - The `title` from frontmatter
    - The filename without extension
    - All `[[wikilinks]]` in body text (not frontmatter, not code blocks)
-4. Build a title index: map every existing note title (case-insensitive) and filename to its path
-5. For each wikilink target, check if it resolves to an existing note by title or filename match
+4. Build a title index mapping every existing note title (case-insensitive) and filename to its path
+5. Check each wikilink target against the index for title or filename match
 6. Collect all unresolved targets with the files that reference them
 
 ### Skip List
@@ -31,7 +32,7 @@ Scan the vault for broken `[[wikilinks]]` — references in body text that point
 Do not flag these as broken:
 - Wikilinks inside fenced code blocks (`` ``` ``) or inline code (`` ` ``)
 - Project index self-references (`[[Project - ProjectName]]` in the project's own index)
-- Obvious placeholder examples (`[[Note Title]]`, `[[example]]`, `[[Foo]]`, `[[Bar]]`)
+- Wikilinks under 4 characters or matching common placeholder patterns (`[[Foo]]`, `[[Bar]]`, `[[example]]`, `[[Note Title]]`)
 
 ## Phase 2 — Propose
 
@@ -49,16 +50,15 @@ Create stubs? Approve, modify, or skip individual entries.
 ```
 
 **Type inference rules:**
-- Target title contains "gotcha", "pitfall", "trap", "footgun" → `gotcha`
-- Target title contains "pattern", "technique", "approach" → `pattern`
-- Target title contains "architecture", "design", "system" → `architecture`
+- Title contains "gotcha", "pitfall", "trap", "footgun" → `gotcha`
+- Title contains "pattern", "technique", "approach" → `pattern`
+- Title contains "architecture", "design", "system" → `architecture`
 - Target appears in a project-specific note → same project, `knowledge` type
-- Target appears in `knowledge/` or `architecture/` → `knowledge` type
 - Default: `knowledge`
 
 **Folder inference rules:**
-- If all referencing notes are from one project → `projects/{project}/`
-- If referenced by notes from multiple projects → `knowledge/`
+- All referencing notes from one project → `projects/{project}/`
+- Referenced by notes from multiple projects → `knowledge/`
 - Architecture-type stubs → `architecture/`
 
 Wait for user approval before proceeding.
@@ -67,9 +67,9 @@ Wait for user approval before proceeding.
 
 For each approved stub:
 
-1. **Read the template** from `{vault}/meta/templates/` matching the inferred type
+1. Read the template from `{vault}/meta/templates/` matching the inferred type.
 
-2. **Write frontmatter:**
+2. Assemble frontmatter:
 
 ```yaml
 ---
@@ -77,7 +77,7 @@ title: "{wikilink target text}"
 type: {inferred type}
 project: {inferred project or cross-project}
 source: claude
-tags: [{inferred from referencing notes — use shared tags}]
+tags: [{inferred from referencing notes — shared tags, minimum 1}]
 created: "{today YYYY-MM-DD}"
 updated: "{today YYYY-MM-DD}"
 visibility: {project-only if single project, cross-project if multi}
@@ -85,16 +85,16 @@ links-to: ["{titles of notes that reference this stub}"]
 ---
 ```
 
-3. **Write a minimal body** following the template structure. Mark sections that need fleshing out:
+3. Write a minimal body following the template structure, with TODO markers for content:
 
 ```markdown
 ## Summary
 
-Stub created from broken wikilink in [[Referencing Note Title]]. This note needs content.
+Stub — referenced by [[Referencing Note Title]]. Needs content.
 
 ## Details
 
-<!-- TODO: flesh out this stub -->
+<!-- TODO: flesh out this stub with vault-write -->
 
 ## References
 
@@ -104,12 +104,12 @@ Stub created from broken wikilink in [[Referencing Note Title]]. This note needs
 For `gotcha` type, use the gotcha template sections (`## The Gotcha`, `## How to Detect`, etc.) with TODO markers.
 For `pattern` type, use the pattern template sections (`## Problem`, `## Solution`, etc.) with TODO markers.
 
-4. **Name the file** using kebab-case from the wikilink target title, stripping leading articles.
+4. Name the file using kebab-case from the wikilink target title, stripping leading articles.
 
-5. **Update the project index** — append the new stub to `{vault}/projects/{project}/index.md` under `## Notes`, marked as a stub:
+5. Append the new stub to `{vault}/projects/{project}/index.md` under `## Notes`:
    - `[[Note Title]] — stub, needs content`
 
-6. **Add backlinks** — in the referencing note(s), update `links-to` frontmatter to include the new stub's title (if not already present).
+6. In the referencing note(s), add the stub's title to `links-to` frontmatter if not already present.
 
 ## Phase 4 — Report
 
@@ -118,14 +118,13 @@ Created {N} stub notes:
   projects/osrps/session-lock-deep-dive.md (stub)
   knowledge/rate-limiting-gotcha.md (stub)
 
-Stubs need content — use vault-write to flesh them out, or let the
-vault-gardener flag them for review.
+Stubs need content — flesh out with vault-write or let vault-gardener flag for review.
 ```
 
 ## Quality Rules
 
 - Stubs pass the same frontmatter validation as vault-write (required fields, valid enums)
 - Stubs are never cross-project unless referenced by multiple projects
-- Never overwrite an existing note — if a file exists at the target path, skip it
-- Tags are inferred from the referencing notes' tags (intersection of shared tags, minimum 1)
+- Never overwrite an existing note — skip if a file exists at the target path
+- Infer tags from referencing notes' tags (intersection of shared tags, minimum 1)
 - If no tags can be inferred, use the referencing note's project name as a tag
