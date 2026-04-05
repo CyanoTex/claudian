@@ -5,68 +5,40 @@ description: First-run setup for Claudian. Creates the Obsidian vault structure,
 
 # claudian-init
 
-Interactive first-run setup for Claudian. Guides the user through configuring the vault, registering projects, and writing the global config.
+Interactive first-run setup for Claudian. Ask each question, wait for the answer, then proceed — do not batch questions.
 
 ## When to Use
 
-- No `~/.claudian/config.yaml` exists
-- The user says "set up Claudian", "init Claudian", or "reconfigure"
-- A Claudian hook fails because the config is missing or malformed
+- `~/.claudian/config.yaml` does not exist
+- User says "set up Claudian", "init Claudian", or "reconfigure"
+- A Claudian hook fails due to missing or malformed config
 
 ## Setup Flow
 
-Work through these steps in order. Ask each question, wait for an answer, then proceed. Do not batch all questions at once.
-
----
-
 ### Step 1 — Vault Mode
 
-Ask the user which vault mode they want:
-
-> "Do you want a single shared vault for all projects, or a separate vault per project?
-> I recommend **single vault** — it keeps cross-project knowledge together and makes linking between projects easy."
-
-Accept: `single` / `per-project`. Default to `single` if the user says they don't mind.
-
----
+Ask: single shared vault for all projects, or a separate vault per project? Recommend **single** (keeps cross-project knowledge together). Default to `single` if the user has no preference.
 
 ### Step 2 — Vault Path
 
-Ask where to create (or point to) the vault:
-
-> "Where should the vault live? Press Enter to use the default."
-
-Platform defaults:
-- **Windows**: `~/Documents/Claudian-Vault`
-- **macOS**: `~/Documents/Claudian-Vault`
+Ask where to create the vault. Platform defaults:
+- **Windows / macOS**: `~/Documents/Claudian-Vault`
 - **Linux**: `~/claudian-vault`
 
-If the path already exists and contains `.obsidian/`, confirm whether to use the existing vault or create fresh. Never delete an existing vault without explicit confirmation.
-
----
+If the path exists and contains `.obsidian/`, confirm whether to use it or create fresh. Never delete an existing vault without explicit confirmation.
 
 ### Step 3 — Register Projects
 
-Ask the user to identify their projects:
+Auto-detect: scan `~/src/`, `~/projects/`, `~/dev/`, and cwd for directories containing `.git`. Present the list; let the user confirm or deselect.
 
-> "Which projects should Claudian know about? I'll try to auto-detect from common locations."
+For each registered project collect:
+- `name`: kebab-case, auto-derived from folder name
+- `repo`: absolute path to project root
+- `tags`: 1–5 domain tags (ask the user)
 
-Auto-detect: scan `~/src/`, `~/projects/`, `~/dev/`, and the current working directory for directories containing `.git`. Present the list and let the user confirm or deselect.
-
-For each registered project, collect:
-- `name`: short identifier (kebab-case, auto-derived from folder name)
-- `repo`: absolute path to the project root
-- `tags`: 1–5 tags describing the project domain (ask the user)
-
-If the Bloxus plugin is detected (directory contains `default.project.json` or `*.project.json` at root), auto-tag it with `roblox`.
-
-Ask if the user wants to add any additional projects not found by auto-detect.
-
----
+Auto-tag with `roblox` if a `*.project.json` exists at root. Ask if the user wants to add any projects not found by auto-detect.
 
 ### Step 4 — Create Vault Directory Structure
-
-Create the following directory structure at the vault path:
 
 ```
 {vault}/
@@ -80,14 +52,7 @@ Create the following directory structure at the vault path:
     claudian-config.yaml
 ```
 
-For each registered project, create a project folder and stub index note:
-
-```
-{vault}/projects/{project-name}/
-  index.md
-```
-
-The stub `index.md` should have complete frontmatter:
+For each project, create `{vault}/projects/{project-name}/index.md`:
 
 ```yaml
 ---
@@ -112,11 +77,7 @@ Project index for {project-name}.
 
 Copy note templates from the plugin's `templates/` directory into `{vault}/meta/templates/` if the plugin path is known.
 
----
-
 ### Step 5 — Write ~/.claudian/config.yaml
-
-Write the global config file:
 
 ```yaml
 version: 1
@@ -141,13 +102,9 @@ capabilities:
   mcp-server: null
 ```
 
-Create `~/.claudian/` if it does not exist. Do not overwrite an existing config without showing the current config and asking the user to confirm.
-
----
+Create `~/.claudian/` if it does not exist. Do not overwrite an existing config without showing the current config and asking for confirmation.
 
 ### Step 6 — Confirm to User
-
-Report what was set up:
 
 ```
 Claudian is ready.
@@ -162,4 +119,4 @@ Next steps:
 - Add notes to {vault}/ideas/ any time — run /vault-extract to process them
 ```
 
-If anything failed (e.g., a directory couldn't be created), report the specific error and what the user can do manually to fix it.
+Report any failures with the specific error and manual remediation steps.

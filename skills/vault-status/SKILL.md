@@ -9,19 +9,14 @@ Report the health of the Claudian Obsidian vault as a concise dashboard.
 
 ## When to Use
 
-- The user asks "how's the vault?" or "vault status" or similar
-- Periodically at the start of a session to surface maintenance needs
-- After a batch of vault-write calls to check for orphans
-- Before a vault-link run to find what needs linking
+- User asks "how's the vault?" or "vault status"
+- Start of a session to surface maintenance needs
+- After a batch of `vault-write` calls to check for orphans
+- Before `vault-link` to find what needs linking
 
 ## Fresh Vault Detection
 
-Before running checks, determine if this is a freshly initialized vault:
-- All notes were created today (check `created` frontmatter)
-- The `knowledge/` and `ideas/` folders are empty
-- Only project index stubs exist
-
-If the vault is fresh, report it clearly instead of flagging false issues:
+If all notes were created today, `knowledge/` and `ideas/` are empty, and only project stubs exist — report it as fresh instead of flagging false issues:
 
 ```
 VAULT STATUS — {date}
@@ -35,63 +30,25 @@ Get started:
 - The SessionStart hook will surface relevant notes as the vault grows
 ```
 
-Skip the full dashboard for fresh vaults — orphan and stale checks are meaningless when there's no content yet.
+Skip the full dashboard for fresh vaults.
 
-## What to Report
+## Checks
 
-Run all checks and present the results together as a single dashboard. Do not pause between checks.
+Run all checks, then present results as a single dashboard.
 
-### 1. Orphan Notes
+**Orphan notes** — no inbound wikilinks from any other vault note. Report count + top 5 by last-updated.
 
-Notes that have no inbound wikilinks from other vault notes. These are isolated knowledge islands.
+**Stale notes** — `updated` frontmatter more than 30 days old AND linked to by at least one other note. Report count + up to 5 with last-updated date.
 
-Detection: for each note, check whether any other note contains `[[Note Title]]` or `[[filename]]` pointing to it.
+**Unprocessed ideas** — files in `{vault}/ideas/` without `processed: true`. Report count + titles and creation dates.
 
-Report: count of orphans, list the top 5 by last-updated date.
+**Tag distribution** — count occurrences per tag across all `tags:` frontmatter blocks. Report top 10 tags and any used only once.
 
-### 2. Stale Notes
+**Project coverage** — count files per `{vault}/projects/{project-name}/`, check for `index.md`. Report as table.
 
-Notes that were last updated more than 30 days ago and are still actively referenced by other notes. These may contain outdated information that other notes are relying on.
-
-Detection: check the `updated` frontmatter field. Flag notes where `updated` is more than 30 days before today's date AND at least one other note links to them.
-
-Report: count of stale notes, list up to 5 with their last-updated date.
-
-### 3. Unprocessed Ideas
-
-Files in `{vault}/ideas/` that do not have `processed: true` in their frontmatter.
-
-Detection: read the ideas folder, check frontmatter of each file.
-
-Report: count of unprocessed ideas, list their titles and creation dates.
-
-### 4. Tag Distribution
-
-How many notes use each tag. Low-count tags may indicate under-tagging or orphan taxonomy entries.
-
-Detection: grep all frontmatter `tags:` blocks, count occurrences per tag.
-
-Report: top 10 tags by count, and any tags used only once.
-
-### 5. Project Coverage
-
-How many notes exist per project, and whether each project has an index note.
-
-Detection: count files per `{vault}/projects/{project-name}/` folder, check for `index.md`.
-
-Report: table of project name, note count, and whether an index note exists.
-
-### 6. Missing Frontmatter
-
-Notes that are missing one or more required frontmatter fields: `title`, `type`, `project`, `tags`, `created`, `updated`.
-
-Detection: read each note's frontmatter and check for missing fields.
-
-Report: count of notes with missing fields, list up to 5 with which fields are missing.
+**Missing frontmatter** — notes missing any of: `title`, `type`, `project`, `tags`, `created`, `updated`. Report count + up to 5 with missing fields listed.
 
 ## Output Format
-
-Present the results as a concise dashboard. Use counts prominently so the user can assess severity at a glance:
 
 ```
 VAULT STATUS — {date}
@@ -107,14 +64,11 @@ Tag coverage ({total} tags):
 
 Project coverage:
   <project>: {N} notes  [index: yes/no]
-  <project>: {N} notes  [index: yes/no]
 ```
 
-If everything is healthy, say so clearly: "Vault looks healthy — no orphans, no stale notes, all ideas processed."
+If everything is healthy: "Vault looks healthy — no orphans, no stale notes, all ideas processed."
 
 ## Recommended Actions
-
-After presenting the dashboard, suggest next steps if there are issues:
 
 - Orphans → run `vault-link`
 - Unprocessed ideas → run `vault-extract`
