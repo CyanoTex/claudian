@@ -76,7 +76,7 @@ async function run() {
     index = fullIndex.filter(note => isRelevant(note, project));
   } catch (err) {
     if (err.code !== 'ENOENT') {
-      process.stderr.write(`[Claudian] Cache read failed: ${err.message}\n`);
+      process.stderr.write(`[Claudian] Cache read failed: ${err?.message || err}\n`);
     }
     emptyOutput();
     return;
@@ -117,7 +117,7 @@ import { pathToFileURL } from 'url';
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   run().catch(err => {
-    process.stderr.write(`[Claudian] UserPromptSubmit error: ${err.message}\n`);
+    process.stderr.write(`[Claudian] UserPromptSubmit error: ${err?.message || err}\n`);
     emptyOutput();
   });
 }
