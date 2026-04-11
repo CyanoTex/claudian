@@ -28,8 +28,8 @@ Do **NOT** use for:
 | `knowledge` | Facts, API summaries, tool behaviour | project-only | Summary, Details, References |
 | `architecture` | Design decisions, trade-off rationale | project-only | Context, Decision, Consequences, Related |
 | `spec` | Specifications, requirements, designs | project-only | Overview, Requirements, Design, Open Questions |
-| `pattern` | Reusable code or process patterns | cross-project | Problem, Solution, When/Not to Use, Known Uses |
-| `gotcha` | Bugs, footguns, surprising behaviour | cross-project | The Gotcha, Detect, Fix, Prevention |
+| `pattern` | Reusable code or process patterns | cross-project | Problem, Solution, When to Use, When Not to Use, Known Uses |
+| `gotcha` | Bugs, footguns, surprising behaviour | cross-project | The Gotcha, How to Detect, Fix, Prevention |
 
 **2. Check for duplicates** using `vault-search`. If a note on this topic exists, update it — add new content under `## Updates` with the date. Don't create duplicates.
 
