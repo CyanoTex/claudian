@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parse, generate, validate, normalizeTags, VALID_TYPES, VALID_SOURCES } from '../core/frontmatter.js';
+import { parse, generate, validate, validateLinksTo, normalizeTags, VALID_TYPES, VALID_SOURCES } from '../core/frontmatter.js';
 
 describe('frontmatter', () => {
   const validFrontmatter = {
@@ -112,6 +112,55 @@ title: Empty
     it('reports invalid visibility', () => {
       const errors = validate({ ...validFrontmatter, visibility: 'secret' });
       expect(errors.some(e => e.includes('visibility'))).toBe(true);
+    });
+  });
+
+  describe('validateLinksTo', () => {
+    const index = [
+      { title: 'Existing Note', path: 'knowledge/existing.md' },
+      { title: 'Another Note', path: 'knowledge/another.md' },
+    ];
+
+    it('returns all valid when links-to titles exist in index', () => {
+      const result = validateLinksTo(['Existing Note', 'Another Note'], index);
+      expect(result.valid).toEqual(['Existing Note', 'Another Note']);
+      expect(result.dangling).toEqual([]);
+    });
+
+    it('flags titles not in index or planned links as dangling', () => {
+      const result = validateLinksTo(['Existing Note', 'Ghost Note'], index);
+      expect(result.valid).toEqual(['Existing Note']);
+      expect(result.dangling).toEqual(['Ghost Note']);
+    });
+
+    it('accepts planned links as valid', () => {
+      const planned = ['Future Note'];
+      const result = validateLinksTo(['Future Note'], index, planned);
+      expect(result.valid).toEqual(['Future Note']);
+      expect(result.dangling).toEqual([]);
+    });
+
+    it('uses case-insensitive matching', () => {
+      const result = validateLinksTo(['existing note', 'ANOTHER NOTE'], index);
+      expect(result.valid).toEqual(['existing note', 'ANOTHER NOTE']);
+      expect(result.dangling).toEqual([]);
+    });
+
+    it('returns empty arrays for empty links-to', () => {
+      const result = validateLinksTo([], index);
+      expect(result.valid).toEqual([]);
+      expect(result.dangling).toEqual([]);
+    });
+
+    it('returns empty arrays for null/undefined links-to', () => {
+      expect(validateLinksTo(null, index)).toEqual({ valid: [], dangling: [] });
+      expect(validateLinksTo(undefined, index)).toEqual({ valid: [], dangling: [] });
+    });
+
+    it('skips non-string elements in links-to array', () => {
+      const result = validateLinksTo([123, null, 'Existing Note', true], index);
+      expect(result.valid).toEqual(['Existing Note']);
+      expect(result.dangling).toEqual([]);
     });
   });
 });

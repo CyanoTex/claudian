@@ -60,6 +60,16 @@ Needs attention:
   - 4 stale notes (>30 days, still referenced)
 ```
 
+## On Completion
+
+After all checks and fixes are done, write the current date to `{vault}/.claudian/gardener-last-run`:
+
+```
+YYYY-MM-DD
+```
+
+Create the `.claudian/` directory if it doesn't exist. This timestamp is checked by SessionStart to determine when maintenance last ran.
+
 ## Rules
 
 - Never delete notes

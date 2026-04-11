@@ -62,6 +62,8 @@ For cross-project notes, also add `relevant-to: [<project1>, <project2>]`.
 | `spec`, `pattern`, `gotcha` | `{vault}/knowledge/` |
 | project-specific | `{vault}/projects/{project-name}/` |
 
+**6. Dispatch reviewer** — after writing the note, dispatch the `vault-reviewer` agent in the background to review it. Do not wait for the result. Use the Agent tool with `run_in_background: true` and pass the path of the note you just wrote. The reviewer will surface any issues as a background notification.
+
 ## File Naming
 
 Kebab-case from the title, strip leading articles (a, an, the).

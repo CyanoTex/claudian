@@ -16,12 +16,14 @@ describe('quality-gate', () => {
       const result = evaluate({ ...validNote, title: '' }, []);
       expect(result.action).toBe(REJECT);
       expect(result.reason).toContain('title');
+      expect(result.warnings).toEqual([]);
     });
 
     it('rejects notes with no tags', () => {
       const result = evaluate({ ...validNote, tags: [] }, []);
       expect(result.action).toBe(REJECT);
       expect(result.reason).toContain('tag');
+      expect(result.warnings).toEqual([]);
     });
   });
 
@@ -62,6 +64,7 @@ describe('quality-gate', () => {
       const result = evaluate(validNote, existingIndex);
       expect(result.action).toBe(UPDATE);
       expect(result.existingPath).toContain('datastore-locking.md');
+      expect(result.warnings).toEqual([]);
     });
 
     it('allows write when no duplicate exists', () => {
@@ -86,6 +89,44 @@ describe('quality-gate', () => {
       };
       const result = evaluate(note, []);
       expect(result.action).toBe(WRITE);
+    });
+  });
+
+  describe('links-to validation', () => {
+    const existingIndex = [
+      { title: 'DataStore Session Locking', path: '/vault/knowledge/datastore-locking.md', tags: ['datastore'], project: 'my-project' },
+      { title: 'Error Handling Pattern', path: '/vault/knowledge/errors.md', tags: ['errors'], project: 'cross-project' },
+    ];
+
+    it('adds warnings for dangling links-to entries', () => {
+      const note = { ...validNote, title: 'New Architecture Note', 'links-to': ['DataStore Session Locking', 'Ghost Note'] };
+      const result = evaluate(note, existingIndex);
+      expect(result.action).toBe(WRITE);
+      expect(result.warnings).toContain('links-to references "Ghost Note" which does not exist');
+    });
+
+    it('returns no warnings when all links-to entries are valid', () => {
+      const note = { ...validNote, title: 'New Architecture Note', 'links-to': ['DataStore Session Locking'] };
+      const result = evaluate(note, existingIndex);
+      expect(result.action).toBe(WRITE);
+      expect(result.warnings).toEqual([]);
+    });
+
+    it('returns no warnings when links-to is empty', () => {
+      const note = { ...validNote, 'links-to': [] };
+      const result = evaluate(note, existingIndex);
+      expect(result.warnings).toEqual([]);
+    });
+
+    it('returns no warnings when links-to is missing', () => {
+      const result = evaluate(validNote, existingIndex);
+      expect(result.warnings).toEqual([]);
+    });
+
+    it('accepts planned links as valid', () => {
+      const note = { ...validNote, 'links-to': ['Future Note'] };
+      const result = evaluate(note, existingIndex, { plannedLinks: ['Future Note'] });
+      expect(result.warnings).toEqual([]);
     });
   });
 });
