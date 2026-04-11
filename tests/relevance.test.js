@@ -262,6 +262,44 @@ No links here.`);
       const titles = ranked.map(n => n.title);
       expect(titles).not.toContain('Unrelated Note');
     });
+
+    it('boosts notes matching git keywords in title', () => {
+      const ranked = rankNotes(notes, 'my-app', [], ['architecture']);
+      expect(ranked[0].title).toBe('Recent Project Note');
+      expect(ranked[0].score).toBeGreaterThan(
+        rankNotes(notes, 'my-app', [], [])[0].score
+      );
+    });
+
+    it('boosts notes matching git keywords in tags', () => {
+      const ranked = rankNotes(notes, 'my-app', [], ['patterns']);
+      const crossProject = ranked.find(n => n.title === 'Old Cross-Project');
+      const withoutGit = rankNotes(notes, 'my-app', [], []);
+      const crossProjectNoGit = withoutGit.find(n => n.title === 'Old Cross-Project');
+      expect(crossProject.score).toBeGreaterThan(crossProjectNoGit.score);
+    });
+
+    it('caps git keyword boost at 10 points', () => {
+      const manyKeywordNote = {
+        title: 'Alpha Bravo Charlie Delta Echo Foxtrot',
+        path: '/vault/knowledge/many.md',
+        tags: ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'],
+        project: 'my-app',
+        visibility: 'project-only',
+        'relevant-to': [],
+        updated: '2026-04-04',
+      };
+      const keywords = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'];
+      const ranked = rankNotes([manyKeywordNote], 'my-app', [], keywords);
+      const rankedNoGit = rankNotes([manyKeywordNote], 'my-app', [], []);
+      const gitBoost = ranked[0].score - rankedNoGit[0].score;
+      expect(gitBoost).toBeLessThanOrEqual(10);
+    });
+
+    it('works without git keywords (backwards compatible)', () => {
+      const ranked = rankNotes(notes, 'my-app', ['architecture']);
+      expect(ranked[0].title).toBe('Recent Project Note');
+    });
   });
 
   describe('isRelevant', () => {

@@ -60,10 +60,10 @@ export async function buildIndex(vaultDir) {
   return { index, warnings, backlinks };
 }
 
-export function rankNotes(index, currentProject, currentTags) {
+export function rankNotes(index, currentProject, currentTags, gitKeywords = []) {
   return index
     .filter(note => isRelevant(note, currentProject))
-    .map(note => ({ ...note, score: scoreNote(note, currentProject, currentTags) }))
+    .map(note => ({ ...note, score: scoreNote(note, currentProject, currentTags, gitKeywords) }))
     .sort((a, b) => b.score - a.score);
 }
 
@@ -74,7 +74,7 @@ export function isRelevant(note, currentProject) {
   return false;
 }
 
-function scoreNote(note, currentProject, currentTags) {
+function scoreNote(note, currentProject, currentTags, gitKeywords = []) {
   let score = 0;
 
   if (note.project === currentProject) score += 10;
@@ -87,6 +87,16 @@ function scoreNote(note, currentProject, currentTags) {
   if (note.updated) {
     const daysAgo = (Date.now() - new Date(note.updated).getTime()) / (1000 * 60 * 60 * 24);
     score += Math.max(0, 5 - daysAgo / 30);
+  }
+
+  if (gitKeywords.length > 0) {
+    let gitScore = 0;
+    const titleWords = note.title.toLowerCase().split(/[\s\-_]+/).filter(w => w.length >= 5);
+    for (const keyword of gitKeywords) {
+      if (titleWords.includes(keyword)) gitScore += 2;
+      if (note.tags.some(t => t.toLowerCase() === keyword)) gitScore += 2;
+    }
+    score += Math.min(gitScore, 10);
   }
 
   return score;
