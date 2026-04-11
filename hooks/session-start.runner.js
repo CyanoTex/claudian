@@ -81,7 +81,7 @@ async function run() {
       lines.push(`| ${note.title} | ${note.type} | ${note.tags.join(', ')} | ${note.relPath} |`);
     }
     lines.push(``);
-    lines.push(`Use vault-search to find more notes or read a specific note by path.`);
+    lines.push(`Read a specific note by path, or search the vault with Grep/Glob.`);
   } else {
     lines.push(`No relevant notes found. Use vault-write to start building knowledge.`);
   }

@@ -94,7 +94,7 @@ npm run test:watch # vitest in watch mode
 ```
 core/        Agent-agnostic modules (config, frontmatter, quality-gate, relevance, resolver)
 hooks/       SessionStart + UserPromptSubmit runners, hooks.json config, run-hook.cmd wrapper
-skills/      Skill definitions (vault-write, vault-search, vault-seed, etc.)
+skills/      Skill definitions (vault-write, vault-seed, vault-link, etc.)
 agents/      Subagent definitions (vault-gardener, vault-reviewer, vault-seed-worker)
 templates/   Note templates (architecture, gotcha, knowledge, pattern, spec)
 tests/       Vitest suites — mirrors core/ and hooks/ structure
