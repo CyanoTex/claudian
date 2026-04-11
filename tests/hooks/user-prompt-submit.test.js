@@ -115,6 +115,75 @@ describe('user-prompt-submit', () => {
     });
   });
 
+  describe('short message bypass', () => {
+    it('scores normally for messages >= 20 chars', () => {
+      const note = {
+        title: 'DataStore Locking Pattern',
+        tags: ['datastore'],
+        relPath: 'knowledge/datastore.md',
+      };
+      // 31 chars — above threshold
+      const score = scoreMatch('How does datastore locking work', note);
+      expect(score).toBeGreaterThan(0);
+    });
+
+    it('scoreMatch still works on short messages (bypass is in run())', () => {
+      const note = {
+        title: 'Error Handling',
+        tags: ['errors'],
+        relPath: 'knowledge/errors.md',
+      };
+      // scoreMatch itself doesn't enforce length — that's run()'s job
+      const score = scoreMatch('errors', note);
+      expect(score).toBe(3); // tag match
+    });
+
+    it('returns 0 for empty message', () => {
+      const note = {
+        title: 'DataStore Locking Pattern',
+        tags: ['datastore'],
+        relPath: 'knowledge/datastore.md',
+      };
+      const score = scoreMatch('', note);
+      expect(score).toBe(0);
+    });
+  });
+
+  describe('threshold filtering', () => {
+    it('single generic title word scores below threshold', () => {
+      const note = {
+        title: 'Dangling Wikilink Anti-Pattern',
+        tags: ['obsidian', 'wikilinks', 'vault-seed'],
+        relPath: 'architecture/dangling-wikilink-anti-pattern.md',
+      };
+      // Only "pattern" matches (2 pts) — below threshold of 4
+      const score = scoreMatch('check the pattern for this feature', note);
+      expect(score).toBeLessThan(4);
+    });
+
+    it('two specific words meet threshold', () => {
+      const note = {
+        title: 'Dangling Wikilink Anti-Pattern',
+        tags: ['obsidian', 'wikilinks', 'vault-seed'],
+        relPath: 'architecture/dangling-wikilink-anti-pattern.md',
+      };
+      // "dangling" (2) + "wikilink" (2) = 4, meets threshold
+      const score = scoreMatch('fix the dangling wikilink issue', note);
+      expect(score).toBeGreaterThanOrEqual(4);
+    });
+
+    it('tag plus title word exceeds threshold', () => {
+      const note = {
+        title: 'Plugin Cache Versioning Gotcha',
+        tags: ['plugin', 'cache', 'versioning'],
+        relPath: 'knowledge/plugin-cache-versioning-gotcha.md',
+      };
+      // "plugin" title (2) + "plugin" tag (3) + "cache" tag (3) = 8
+      const score = scoreMatch('the plugin cache is stale', note);
+      expect(score).toBeGreaterThanOrEqual(4);
+    });
+  });
+
   describe('visibility filtering', () => {
     const mixedIndex = [
       { title: 'DataStore Locking', tags: ['datastore'], relPath: 'knowledge/datastore.md', project: 'my-game', visibility: 'project-only', 'relevant-to': [] },
