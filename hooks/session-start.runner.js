@@ -23,7 +23,7 @@ function extractGitKeywords(cwd) {
     const log = execFileSync('git', ['log', '-5', '--format=%s'], { cwd, encoding: 'utf-8', timeout: 5000 }).trim();
     log.split(/[\s\-_.,;:!?()\[\]"'`#@/{}]+/).filter(w => w.length >= 5).forEach(w => keywords.add(w.toLowerCase()));
     return [...keywords];
-  } catch {
+  } catch (_err) {
     return [];
   }
 }
