@@ -116,6 +116,103 @@ Bad frontmatter.`);
       expect(warnings).toHaveLength(1);
       expect(warnings[0].file).toContain('bad-note.md');
     });
+
+    it('builds backlinks map from body wikilinks', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'note-a.md'), `---
+title: Note A
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+Links to [[Note B]] and [[Note C]].`);
+
+      await writeFile(join(vaultDir, 'knowledge', 'note-b.md'), `---
+title: Note B
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+Links to [[Note A]].`);
+
+      await writeFile(join(vaultDir, 'knowledge', 'note-c.md'), `---
+title: Note C
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+No outbound links.`);
+
+      const { backlinks } = await buildIndex(vaultDir);
+      expect(backlinks['note b']).toContain('Note A');
+      expect(backlinks['note c']).toContain('Note A');
+      expect(backlinks['note a']).toContain('Note B');
+      expect(backlinks['note c']).not.toContain('Note B');
+    });
+
+    it('captures links-to frontmatter as backlinks', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'source.md'), `---
+title: Source Note
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+links-to: ["Target Note"]
+---
+
+No body wikilinks.`);
+
+      const { backlinks } = await buildIndex(vaultDir);
+      expect(backlinks['target note']).toContain('Source Note');
+    });
+
+    it('handles aliased wikilinks [[target|alias]]', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'alias-test.md'), `---
+title: Alias Test
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+See [[Real Title|display text]] for details.`);
+
+      const { backlinks } = await buildIndex(vaultDir);
+      expect(backlinks['real title']).toContain('Alias Test');
+      expect(backlinks['display text']).toBeUndefined();
+    });
+
+    it('returns empty backlinks for vault with no links', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'isolated.md'), `---
+title: Isolated Note
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+No links here.`);
+
+      const { backlinks } = await buildIndex(vaultDir);
+      expect(Object.keys(backlinks)).toHaveLength(0);
+    });
   });
 
   describe('rankNotes', () => {
@@ -164,6 +261,51 @@ Bad frontmatter.`);
       const ranked = rankNotes(notes, 'my-app', []);
       const titles = ranked.map(n => n.title);
       expect(titles).not.toContain('Unrelated Note');
+    });
+
+    it('boosts notes matching git keywords in title', () => {
+      const titleNote = {
+        title: 'Backlinks Implementation Guide',
+        path: '/vault/knowledge/backlinks.md',
+        tags: ['guide'],
+        project: 'my-app',
+        visibility: 'project-only',
+        'relevant-to': [],
+        updated: '2026-04-04',
+      };
+      const ranked = rankNotes([titleNote], 'my-app', [], ['backlinks']);
+      const rankedNoGit = rankNotes([titleNote], 'my-app', [], []);
+      expect(ranked[0].score).toBeGreaterThan(rankedNoGit[0].score);
+    });
+
+    it('boosts notes matching git keywords in tags', () => {
+      const ranked = rankNotes(notes, 'my-app', [], ['patterns']);
+      const crossProject = ranked.find(n => n.title === 'Old Cross-Project');
+      const withoutGit = rankNotes(notes, 'my-app', [], []);
+      const crossProjectNoGit = withoutGit.find(n => n.title === 'Old Cross-Project');
+      expect(crossProject.score).toBeGreaterThan(crossProjectNoGit.score);
+    });
+
+    it('caps git keyword boost at 10 points', () => {
+      const manyKeywordNote = {
+        title: 'Alpha Bravo Charlie Delta Echo Foxtrot',
+        path: '/vault/knowledge/many.md',
+        tags: ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'],
+        project: 'my-app',
+        visibility: 'project-only',
+        'relevant-to': [],
+        updated: '2026-04-04',
+      };
+      const keywords = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'];
+      const ranked = rankNotes([manyKeywordNote], 'my-app', [], keywords);
+      const rankedNoGit = rankNotes([manyKeywordNote], 'my-app', [], []);
+      const gitBoost = ranked[0].score - rankedNoGit[0].score;
+      expect(gitBoost).toBeLessThanOrEqual(10);
+    });
+
+    it('works without git keywords (backwards compatible)', () => {
+      const ranked = rankNotes(notes, 'my-app', ['architecture']);
+      expect(ranked[0].title).toBe('Recent Project Note');
     });
   });
 
