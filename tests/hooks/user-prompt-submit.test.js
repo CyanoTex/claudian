@@ -178,7 +178,7 @@ describe('user-prompt-submit', () => {
         tags: ['plugin', 'cache', 'versioning'],
         relPath: 'knowledge/plugin-cache-versioning-gotcha.md',
       };
-      // "plugin" title (2) + "plugin" tag (3) + "cache" tag (3) = 8
+      // "plugin" title (2) + "cache" title (2) + "plugin" tag (3) + "cache" tag (3) = 10
       const score = scoreMatch('the plugin cache is stale', note);
       expect(score).toBeGreaterThanOrEqual(4);
     });
