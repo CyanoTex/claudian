@@ -13,7 +13,7 @@ function isRelevant(note, currentProject) {
 }
 
 function tokenize(text) {
-  const raw = text.toLowerCase().split(/[\s.,;:!?()\[\]"']+/).filter(w => w.length > 0);
+  const raw = text.toLowerCase().split(/[\s.,;:!?()\[\]"'`#@/{}]+/).filter(w => w.length > 0);
   const tokens = new Set();
   for (const token of raw) {
     tokens.add(token);
@@ -74,7 +74,10 @@ async function run() {
     const project = cached.project || null;
     const fullIndex = 'index' in cached ? cached.index : cached;
     index = fullIndex.filter(note => isRelevant(note, project));
-  } catch {
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      process.stderr.write(`[Claudian] Cache read failed: ${err.message}\n`);
+    }
     emptyOutput();
     return;
   }
@@ -113,5 +116,8 @@ function emptyOutput() {
 import { pathToFileURL } from 'url';
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  run().catch(() => emptyOutput());
+  run().catch(err => {
+    process.stderr.write(`[Claudian] UserPromptSubmit error: ${err.message}\n`);
+    emptyOutput();
+  });
 }

@@ -33,7 +33,7 @@ describe('user-prompt-submit', () => {
         tags: ['errors', 'patterns'],
         relPath: 'knowledge/errors.md',
       };
-      // Tag "errors" (6 chars) matches = 3 pts
+      // Tag "errors" matches = 3 pts
       const score = scoreMatch('We keep seeing errors in production', note);
       expect(score).toBe(3);
     });
@@ -100,6 +100,28 @@ describe('user-prompt-submit', () => {
       // "vault-seed" preserved as token, matches tag
       const score = scoreMatch('the vault-seed process is broken', note);
       expect(score).toBe(3); // 1 tag match
+    });
+
+    it('matches underscored tags when message contains the underscored form', () => {
+      const note = {
+        title: 'Audit Results',
+        tags: ['session_manager'],
+        relPath: 'knowledge/session.md',
+      };
+      // "session_manager" preserved as token, matches tag
+      const score = scoreMatch('check the session_manager output', note);
+      expect(score).toBe(3);
+    });
+
+    it('includes title words at exactly 5 characters', () => {
+      const note = {
+        title: 'Cache',
+        tags: [],
+        relPath: 'knowledge/cache.md',
+      };
+      // "cache" is exactly 5 chars — should match (>= 5, not > 5)
+      const score = scoreMatch('the cache is broken and needs fixing', note);
+      expect(score).toBe(2);
     });
 
     it('matches hyphenated title words from non-hyphenated message', () => {
