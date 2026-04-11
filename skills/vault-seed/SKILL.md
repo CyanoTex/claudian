@@ -63,7 +63,7 @@ Before writing anything, check for `{vault}/projects/{project-name}/seed-manifes
 
 1. Read the manifest and show a status summary:
    ```
-   Existing vault-seed progress for "{project}":
+   Existing vault-seed progress for "{project-name}":
      Created: 3 notes
      Deferred: 2 notes (user said "not now")
      Pending: 1 note (not yet offered)
@@ -91,7 +91,7 @@ After writing the index, create `{vault}/projects/{project-name}/seed-manifest.j
 ```json
 {
   "created": "YYYY-MM-DD",
-  "project": "{project}",
+  "project": "{project-name}",
   "notes": [
     { "title": "Note Title", "status": "pending", "path": null }
   ]

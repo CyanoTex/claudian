@@ -156,5 +156,11 @@ title: Empty
       expect(validateLinksTo(null, index)).toEqual({ valid: [], dangling: [] });
       expect(validateLinksTo(undefined, index)).toEqual({ valid: [], dangling: [] });
     });
+
+    it('skips non-string elements in links-to array', () => {
+      const result = validateLinksTo([123, null, 'Existing Note', true], index);
+      expect(result.valid).toEqual(['Existing Note']);
+      expect(result.dangling).toEqual([]);
+    });
   });
 });

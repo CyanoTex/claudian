@@ -23,6 +23,7 @@ describe('quality-gate', () => {
       const result = evaluate({ ...validNote, tags: [] }, []);
       expect(result.action).toBe(REJECT);
       expect(result.reason).toContain('tag');
+      expect(result.warnings).toEqual([]);
     });
   });
 

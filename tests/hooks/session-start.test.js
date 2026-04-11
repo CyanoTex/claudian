@@ -181,4 +181,15 @@ capabilities:
     const output = JSON.parse(stdout);
     expect(output.hookSpecificOutput.additionalContext).not.toContain('maintenance');
   });
+
+  it('warns when gardener-last-run contains invalid date', async () => {
+    const claudianDir = join(vaultDir, '.claudian');
+    await mkdir(claudianDir, { recursive: true });
+    await writeFile(join(claudianDir, 'gardener-last-run'), 'not-a-date');
+
+    const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
+    const { stdout } = await exec('node', [runnerPath, configPath]);
+    const output = JSON.parse(stdout);
+    expect(output.hookSpecificOutput.additionalContext).toContain('Invalid date');
+  });
 });
