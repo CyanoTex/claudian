@@ -6,6 +6,8 @@ import { normalizePath } from './resolver.js';
 export async function buildIndex(vaultDir) {
   const index = [];
   const warnings = [];
+  const outboundLinks = new Map();
+
   await walkDir(vaultDir, async (filePath) => {
     if (!filePath.endsWith('.md')) return;
 
@@ -14,7 +16,7 @@ export async function buildIndex(vaultDir) {
 
     try {
       const content = await readFile(filePath, 'utf-8');
-      const { frontmatter } = parse(content);
+      const { frontmatter, body } = parse(content);
       if (!frontmatter || !frontmatter.title) return;
 
       index.push({
@@ -29,11 +31,33 @@ export async function buildIndex(vaultDir) {
         'relevant-to': frontmatter['relevant-to'] || [],
         updated: frontmatter.updated || frontmatter.created,
       });
+
+      const links = new Set();
+      const bodyLinks = [...body.matchAll(/\[\[([^\]]+)\]\]/g)]
+        .map(m => m[1].split('|')[0].trim());
+      bodyLinks.forEach(l => links.add(l));
+      const linksTo = frontmatter['links-to'] || [];
+      if (Array.isArray(linksTo)) {
+        linksTo.filter(l => typeof l === 'string').forEach(l => links.add(l));
+      }
+      if (links.size > 0) {
+        outboundLinks.set(frontmatter.title, [...links]);
+      }
     } catch (err) {
       warnings.push({ file: relPath, error: err.message });
     }
   });
-  return { index, warnings };
+
+  const backlinks = {};
+  for (const [sourceTitle, targets] of outboundLinks) {
+    for (const target of targets) {
+      const key = target.toLowerCase();
+      if (!backlinks[key]) backlinks[key] = [];
+      backlinks[key].push(sourceTitle);
+    }
+  }
+
+  return { index, warnings, backlinks };
 }
 
 export function rankNotes(index, currentProject, currentTags) {

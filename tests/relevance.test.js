@@ -116,6 +116,103 @@ Bad frontmatter.`);
       expect(warnings).toHaveLength(1);
       expect(warnings[0].file).toContain('bad-note.md');
     });
+
+    it('builds backlinks map from body wikilinks', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'note-a.md'), `---
+title: Note A
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+Links to [[Note B]] and [[Note C]].`);
+
+      await writeFile(join(vaultDir, 'knowledge', 'note-b.md'), `---
+title: Note B
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+Links to [[Note A]].`);
+
+      await writeFile(join(vaultDir, 'knowledge', 'note-c.md'), `---
+title: Note C
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+No outbound links.`);
+
+      const { backlinks } = await buildIndex(vaultDir);
+      expect(backlinks['note b']).toContain('Note A');
+      expect(backlinks['note c']).toContain('Note A');
+      expect(backlinks['note a']).toContain('Note B');
+      expect(backlinks['note c']).not.toContain('Note B');
+    });
+
+    it('captures links-to frontmatter as backlinks', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'source.md'), `---
+title: Source Note
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+links-to: ["Target Note"]
+---
+
+No body wikilinks.`);
+
+      const { backlinks } = await buildIndex(vaultDir);
+      expect(backlinks['target note']).toContain('Source Note');
+    });
+
+    it('handles aliased wikilinks [[target|alias]]', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'alias-test.md'), `---
+title: Alias Test
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+See [[Real Title|display text]] for details.`);
+
+      const { backlinks } = await buildIndex(vaultDir);
+      expect(backlinks['real title']).toContain('Alias Test');
+      expect(backlinks['display text']).toBeUndefined();
+    });
+
+    it('returns empty backlinks for vault with no links', async () => {
+      await writeFile(join(vaultDir, 'knowledge', 'isolated.md'), `---
+title: Isolated Note
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+No links here.`);
+
+      const { backlinks } = await buildIndex(vaultDir);
+      expect(Object.keys(backlinks)).toHaveLength(0);
+    });
   });
 
   describe('rankNotes', () => {
