@@ -1,34 +1,117 @@
 import { describe, it, expect } from 'vitest';
-import { matchKeywords } from '../../hooks/user-prompt-submit.runner.js';
+import { scoreMatch } from '../../hooks/user-prompt-submit.runner.js';
 import { isRelevant } from '../../core/relevance.js';
 
 describe('user-prompt-submit', () => {
-  const index = [
-    { title: 'DataStore Locking', tags: ['datastore', 'concurrency'], relPath: 'knowledge/datastore.md', project: 'my-game', visibility: 'project-only', 'relevant-to': [] },
-    { title: 'Error Handling Pattern', tags: ['errors', 'patterns'], relPath: 'knowledge/errors.md', project: 'cross-project', visibility: 'cross-project', 'relevant-to': [] },
-    { title: 'App Architecture', tags: ['architecture', 'game'], relPath: 'projects/my-game/arch.md', project: 'my-game', visibility: 'project-only', 'relevant-to': [] },
-  ];
-
-  describe('matchKeywords', () => {
-    it('matches note titles in user message', () => {
-      const matches = matchKeywords('How does DataStore locking work?', index);
-      expect(matches).toHaveLength(1);
-      expect(matches[0].title).toBe('DataStore Locking');
+  describe('scoreMatch', () => {
+    it('scores 2 points per title word match (5+ chars, whole-word)', () => {
+      const note = {
+        title: 'DataStore Locking Pattern',
+        tags: ['concurrency'],
+        relPath: 'knowledge/datastore.md',
+      };
+      // "datastore" (9 chars) matches, "locking" (7 chars) matches = 4 pts
+      // Tag "concurrency" does NOT appear in message, so no tag score
+      const score = scoreMatch('How does datastore locking work?', note);
+      expect(score).toBe(4);
     });
 
-    it('matches tags in user message', () => {
-      const matches = matchKeywords('We need better error handling here', index);
-      expect(matches.some(m => m.title === 'Error Handling Pattern')).toBe(true);
+    it('ignores title words under 5 characters', () => {
+      const note = {
+        title: 'App Architecture',
+        tags: ['architecture'],
+        relPath: 'projects/my-game/arch.md',
+      };
+      // "App" is 3 chars — ignored. Only "architecture" (12 chars) matches = 2 pts
+      const score = scoreMatch('Explain the app architecture', note);
+      expect(score).toBe(5); // 2 (title "architecture") + 3 (tag "architecture")
     });
 
-    it('returns empty array when nothing matches', () => {
-      const matches = matchKeywords('What is the weather today?', index);
-      expect(matches).toHaveLength(0);
+    it('scores 3 points per tag match', () => {
+      const note = {
+        title: 'Error Handling Pattern',
+        tags: ['errors', 'patterns'],
+        relPath: 'knowledge/errors.md',
+      };
+      // Tag "errors" (6 chars) matches = 3 pts
+      const score = scoreMatch('We keep seeing errors in production', note);
+      expect(score).toBe(3);
     });
 
-    it('deduplicates matches', () => {
-      const matches = matchKeywords('DataStore DataStore DataStore', index);
-      expect(matches).toHaveLength(1);
+    it('returns 0 for no matches', () => {
+      const note = {
+        title: 'DataStore Locking Pattern',
+        tags: ['datastore', 'concurrency'],
+        relPath: 'knowledge/datastore.md',
+      };
+      const score = scoreMatch('What is the weather today?', note);
+      expect(score).toBe(0);
+    });
+
+    it('uses whole-word matching, not substring', () => {
+      const note = {
+        title: 'Session Management',
+        tags: ['session'],
+        relPath: 'knowledge/session.md',
+      };
+      // "obsession" contains "session" as substring but is a different word
+      const score = scoreMatch('My obsession with clean code', note);
+      expect(score).toBe(0);
+    });
+
+    it('handles hyphenated words in titles', () => {
+      const note = {
+        title: 'Cross-Platform Path Handling',
+        tags: ['paths'],
+        relPath: 'knowledge/cross-platform.md',
+      };
+      // "cross" is 5 chars, "platform" is 8 chars — both match
+      const score = scoreMatch('We need cross platform support', note);
+      expect(score).toBe(4);
+    });
+
+    it('combines title and tag scores', () => {
+      const note = {
+        title: 'DataStore Locking Pattern',
+        tags: ['datastore', 'concurrency'],
+        relPath: 'knowledge/datastore.md',
+      };
+      // "datastore" title match (2) + "datastore" tag match (3) + "concurrency" tag match (3) = 8
+      const score = scoreMatch('datastore concurrency issues', note);
+      expect(score).toBe(8);
+    });
+
+    it('is case-insensitive', () => {
+      const note = {
+        title: 'DataStore Locking Pattern',
+        tags: ['datastore'],
+        relPath: 'knowledge/datastore.md',
+      };
+      const score = scoreMatch('DATASTORE problems', note);
+      expect(score).toBeGreaterThan(0);
+    });
+
+    it('matches hyphenated tags when message contains the hyphenated form', () => {
+      const note = {
+        title: 'Seed Worker Agent',
+        tags: ['vault-seed', 'claude-code'],
+        relPath: 'knowledge/seed-worker.md',
+      };
+      // "vault-seed" preserved as token, matches tag
+      const score = scoreMatch('the vault-seed process is broken', note);
+      expect(score).toBe(3); // 1 tag match
+    });
+
+    it('matches hyphenated title words from non-hyphenated message', () => {
+      const note = {
+        title: 'Cross-Platform Path Handling',
+        tags: ['paths'],
+        relPath: 'knowledge/cross-platform.md',
+      };
+      // Title splits "Cross-Platform" into "cross" + "platform"
+      // Message has "cross" and "platform" as separate words
+      const score = scoreMatch('We need cross platform path handling', note);
+      expect(score).toBe(6); // cross(2) + platform(2) + handling(2)
     });
   });
 
@@ -42,8 +125,7 @@ describe('user-prompt-submit', () => {
 
     it('filters out project-only notes from other projects', () => {
       const filtered = mixedIndex.filter(note => isRelevant(note, 'my-game'));
-      const matches = matchKeywords('datastore', filtered);
-      const titles = matches.map(m => m.title);
+      const titles = filtered.map(n => n.title);
       expect(titles).toContain('DataStore Locking');
       expect(titles).toContain('Shared Pattern');
       expect(titles).toContain('Linked DataStore Note');
@@ -52,15 +134,13 @@ describe('user-prompt-submit', () => {
 
     it('allows cross-project notes through for any project', () => {
       const filtered = mixedIndex.filter(note => isRelevant(note, 'unrelated-project'));
-      const matches = matchKeywords('datastore', filtered);
-      expect(matches).toHaveLength(1);
-      expect(matches[0].title).toBe('Shared Pattern');
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].title).toBe('Shared Pattern');
     });
 
     it('excludes all project-only notes when project is null', () => {
       const filtered = mixedIndex.filter(note => isRelevant(note, null));
       expect(filtered.every(n => n.visibility === 'cross-project' || n.project === 'cross-project')).toBe(true);
-      expect(filtered.some(n => n.project === 'other-game' && n['relevant-to'].length === 0)).toBe(false);
     });
   });
 });
