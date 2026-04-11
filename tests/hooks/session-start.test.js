@@ -104,4 +104,85 @@ capabilities:
     await rm(cache1, { force: true });
     await rm(cache2, { force: true });
   });
+
+  it('nudges when seed manifest has unfinished notes', async () => {
+    const projectDir = join(vaultDir, 'projects', 'test-project');
+    await mkdir(projectDir, { recursive: true });
+    await writeFile(join(projectDir, 'index.md'), `---
+title: "Project - test-project"
+type: knowledge
+project: test-project
+tags: [test]
+created: "2026-04-04"
+updated: "2026-04-04"
+source: claude
+---
+
+# Project - test-project
+`);
+
+    const manifest = {
+      created: '2026-04-11',
+      project: 'test-project',
+      notes: [
+        { title: 'Done Note', status: 'created', path: 'knowledge/done.md' },
+        { title: 'Pending Note', status: 'pending', path: null },
+        { title: 'Deferred Note', status: 'deferred', path: null },
+      ],
+    };
+    await writeFile(join(projectDir, 'seed-manifest.json'), JSON.stringify(manifest));
+
+    await writeFile(configPath, `
+version: 1
+vaults:
+  - name: main
+    path: ${vaultDir.replace(/\\/g, '/')}
+    mode: single
+    projects:
+      test-project:
+        repo: ${process.cwd().replace(/\\/g, '/')}
+capabilities:
+  obsidian-cli: auto-detect
+`);
+
+    const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
+    // exec is promisify(execFile) — safe, no shell injection
+    const { stdout } = await exec('node', [runnerPath, configPath]);
+    const output = JSON.parse(stdout);
+    expect(output.hookSpecificOutput.additionalContext).toContain('vault-seed has 2 unfinished note');
+  });
+
+  it('nudges when gardener has never run', async () => {
+    const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
+    // exec is promisify(execFile) — safe, no shell injection
+    const { stdout } = await exec('node', [runnerPath, configPath]);
+    const output = JSON.parse(stdout);
+    expect(output.hookSpecificOutput.additionalContext).toContain('Vault maintenance has never run');
+  });
+
+  it('nudges when gardener last ran more than 7 days ago', async () => {
+    const claudianDir = join(vaultDir, '.claudian');
+    await mkdir(claudianDir, { recursive: true });
+    const oldDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    await writeFile(join(claudianDir, 'gardener-last-run'), oldDate);
+
+    const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
+    // exec is promisify(execFile) — safe, no shell injection
+    const { stdout } = await exec('node', [runnerPath, configPath]);
+    const output = JSON.parse(stdout);
+    expect(output.hookSpecificOutput.additionalContext).toContain("hasn't run in");
+  });
+
+  it('does not nudge when gardener ran recently', async () => {
+    const claudianDir = join(vaultDir, '.claudian');
+    await mkdir(claudianDir, { recursive: true });
+    const today = new Date().toISOString().split('T')[0];
+    await writeFile(join(claudianDir, 'gardener-last-run'), today);
+
+    const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
+    // exec is promisify(execFile) — safe, no shell injection
+    const { stdout } = await exec('node', [runnerPath, configPath]);
+    const output = JSON.parse(stdout);
+    expect(output.hookSpecificOutput.additionalContext).not.toContain('maintenance');
+  });
 });

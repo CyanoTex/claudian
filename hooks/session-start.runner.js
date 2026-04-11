@@ -95,6 +95,45 @@ async function run() {
     }
   }
 
+  // Seed manifest detection
+  if (project) {
+    try {
+      const manifestPath = join(vaultPath, 'projects', project, 'seed-manifest.json');
+      const manifest = JSON.parse(await readFile(manifestPath, 'utf-8'));
+      const unfinished = (manifest.notes || []).filter(n => n.status === 'pending' || n.status === 'deferred');
+      if (unfinished.length > 0) {
+        lines.push(`## Seed Progress`);
+        lines.push(``);
+        lines.push(`vault-seed has ${unfinished.length} unfinished note(s) for ${project}. Run /vault-seed to resume.`);
+        lines.push(``);
+      }
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        warnings.push({ file: `projects/${project}/seed-manifest.json`, error: err.message });
+      }
+    }
+  }
+
+  // Gardener staleness check
+  try {
+    const gardenerTimePath = join(vaultPath, '.claudian', 'gardener-last-run');
+    const lastRun = (await readFile(gardenerTimePath, 'utf-8')).trim();
+    const daysAgo = Math.floor((Date.now() - new Date(lastRun).getTime()) / (1000 * 60 * 60 * 24));
+    if (daysAgo >= 7) {
+      lines.push(`## Maintenance`);
+      lines.push(``);
+      lines.push(`Vault maintenance hasn't run in ${daysAgo} days. Consider running /vault-gardener.`);
+      lines.push(``);
+    }
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      lines.push(`## Maintenance`);
+      lines.push(``);
+      lines.push(`Vault maintenance has never run. Consider running /vault-gardener.`);
+      lines.push(``);
+    }
+  }
+
   if (warnings.length > 0) {
     lines.push(`## Warnings`);
     lines.push(``);
