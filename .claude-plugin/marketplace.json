@@ -8,7 +8,7 @@
 
   "metadata": {
     "description": "Obsidian vault as Claude's second brain. Persistent, structured, interlinked knowledge across all your projects.",
-    "version": "0.1.10"
+    "version": "0.1.11"
   },
 
   "plugins": [
