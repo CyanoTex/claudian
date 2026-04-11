@@ -25,6 +25,30 @@ export function normalizeTags(tags) {
   return [];
 }
 
+export function validateLinksTo(linksTo, index, plannedLinks = []) {
+  if (!Array.isArray(linksTo) || linksTo.length === 0) {
+    return { valid: [], dangling: [] };
+  }
+
+  const existingTitles = new Set(index.map(n => n.title.toLowerCase()));
+  const plannedTitles = new Set(plannedLinks.map(t => t.toLowerCase()));
+
+  const valid = [];
+  const dangling = [];
+
+  for (const title of linksTo) {
+    if (typeof title !== 'string') continue;
+    const lower = title.toLowerCase();
+    if (existingTitles.has(lower) || plannedTitles.has(lower)) {
+      valid.push(title);
+    } else {
+      dangling.push(title);
+    }
+  }
+
+  return { valid, dangling };
+}
+
 export function validate(frontmatter) {
   const errors = [];
 

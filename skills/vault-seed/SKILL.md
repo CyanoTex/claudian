@@ -57,6 +57,23 @@ Do NOT proceed to Phase 3 without explicit approval.
 
 ## Phase 3: Write
 
+### Step 0: Check for existing manifest
+
+Before writing anything, check for `{vault}/projects/{project-name}/seed-manifest.json`. If it exists:
+
+1. Read the manifest and show a status summary:
+   ```
+   Existing vault-seed progress for "{project-name}":
+     Created: 3 notes
+     Deferred: 2 notes (user said "not now")
+     Pending: 1 note (not yet offered)
+     Skipped: 0 notes
+
+   Resume from where you left off? (yes / start fresh)
+   ```
+2. If "yes": skip Phase 1 and 2, go directly to Step 2 with the manifest's note list. Skip notes with status `created` or `skipped`.
+3. If "start fresh": delete the manifest and proceed normally from Phase 1.
+
 ### Step 1: Write the project index first
 
 Update `{vault}/projects/{project-name}/index.md` under `## Notes` with **planned links** for every approved note. Each entry is a wikilink with an inline description:
@@ -68,6 +85,20 @@ Update `{vault}/projects/{project-name}/index.md` under `## Notes` with **planne
 ```
 
 The description explains what the note should contain. Don't replace existing links. Create the section if absent. The index is always written **before** any content notes.
+
+After writing the index, create `{vault}/projects/{project-name}/seed-manifest.json`:
+
+```json
+{
+  "created": "YYYY-MM-DD",
+  "project": "{project-name}",
+  "notes": [
+    { "title": "Note Title", "status": "pending", "path": null }
+  ]
+}
+```
+
+All notes start as `pending`.
 
 ### Step 2: Offer each note individually
 
@@ -82,6 +113,13 @@ Create [[System Architecture Overview]]?
 - **"Yes"** → proceed to Step 3 for this note
 - **"Not now"** → leave the planned link in the index, move to the next note
 - **"Skip all"** → stop offering, leave remaining planned links for a future session
+
+After each user decision, update the manifest:
+- "Yes" + note created → set status to `created`, set path to the written file path
+- "Not now" → set status to `deferred`
+- "Skip all" → set remaining `pending` notes to `skipped`
+
+When all notes are `created` or `skipped` (no `pending` or `deferred`), delete the manifest.
 
 ### Step 3: Create the note
 
