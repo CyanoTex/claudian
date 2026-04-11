@@ -1,3 +1,5 @@
+import { validateLinksTo } from './frontmatter.js';
+
 export const WRITE = 'write';
 export const UPDATE = 'update';
 export const REJECT = 'reject';
@@ -9,20 +11,26 @@ const EPHEMERA_PATTERNS = [
   /\b(attempting to|trying to fix|reverting)\b/i,
 ];
 
-export function evaluate(note, existingIndex) {
+export function evaluate(note, existingIndex, { plannedLinks = [] } = {}) {
   const validationError = validateBasics(note);
-  if (validationError) return { action: REJECT, reason: validationError };
+  if (validationError) return { action: REJECT, reason: validationError, warnings: [] };
 
   if (isEphemera(note)) {
-    return { action: REJECT, reason: 'Content appears to be session ephemera, not durable knowledge.' };
+    return { action: REJECT, reason: 'Content appears to be session ephemera, not durable knowledge.', warnings: [] };
   }
 
   const duplicate = findDuplicate(note, existingIndex);
   if (duplicate) {
-    return { action: UPDATE, reason: `Similar note exists: "${duplicate.title}"`, existingPath: duplicate.path };
+    return { action: UPDATE, reason: `Similar note exists: "${duplicate.title}"`, existingPath: duplicate.path, warnings: [] };
   }
 
-  return { action: WRITE, reason: 'Passes quality gate.' };
+  const warnings = [];
+  const { dangling } = validateLinksTo(note['links-to'], existingIndex, plannedLinks);
+  for (const title of dangling) {
+    warnings.push(`links-to references "${title}" which does not exist`);
+  }
+
+  return { action: WRITE, reason: 'Passes quality gate.', warnings };
 }
 
 function validateBasics(note) {
