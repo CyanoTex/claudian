@@ -23,19 +23,17 @@ Do **NOT** use for:
 
 **1. Determine note type**
 
-| Type | Use for |
-|------|---------|
-| `knowledge` | Facts, API summaries, tool behaviour |
-| `architecture` | Design decisions, trade-off rationale |
-| `spec` | Specifications, requirements, designs |
-| `pattern` | Reusable code or process patterns |
-| `gotcha` | Bugs, footguns, surprising behaviour |
+| Type | Use for | Default visibility | Body sections |
+|------|---------|-------------------|---------------|
+| `knowledge` | Facts, API summaries, tool behaviour | project-only | Summary, Details, References |
+| `architecture` | Design decisions, trade-off rationale | project-only | Context, Decision, Consequences, Related |
+| `spec` | Specifications, requirements, designs | project-only | Overview, Requirements, Design, Open Questions |
+| `pattern` | Reusable code or process patterns | cross-project | Problem, Solution, When/Not to Use, Known Uses |
+| `gotcha` | Bugs, footguns, surprising behaviour | cross-project | The Gotcha, Detect, Fix, Prevention |
 
-**2. Read the template** from `{vault}/meta/templates/` for the chosen type. Fill all required frontmatter fields.
+**2. Check for duplicates** using `vault-search`. If a note on this topic exists, update it — add new content under `## Updates` with the date. Don't create duplicates.
 
-**3. Check for duplicates** using `vault-search`. If a note on this topic exists, update it — add new content under `## Updates` with the date. Don't create duplicates.
-
-**4. Write with complete frontmatter**
+**3. Write with complete frontmatter**
 
 ```yaml
 ---
@@ -53,9 +51,9 @@ links-to: ["Note Title One", "Note Title Two"]
 
 For cross-project notes, also add `relevant-to: [<project1>, <project2>]`.
 
-**5. Add wikilinks** — at minimum, link to `[[Project - ProjectName]]` and any directly referenced notes.
+**4. Add wikilinks** — at minimum, link to `[[Project - ProjectName]]` and any directly referenced notes.
 
-**6. Place in the correct folder**
+**5. Place in the correct folder**
 
 | Type | Folder |
 |------|--------|
