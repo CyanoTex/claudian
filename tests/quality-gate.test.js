@@ -16,6 +16,7 @@ describe('quality-gate', () => {
       const result = evaluate({ ...validNote, title: '' }, []);
       expect(result.action).toBe(REJECT);
       expect(result.reason).toContain('title');
+      expect(result.warnings).toEqual([]);
     });
 
     it('rejects notes with no tags', () => {
@@ -62,6 +63,7 @@ describe('quality-gate', () => {
       const result = evaluate(validNote, existingIndex);
       expect(result.action).toBe(UPDATE);
       expect(result.existingPath).toContain('datastore-locking.md');
+      expect(result.warnings).toEqual([]);
     });
 
     it('allows write when no duplicate exists', () => {

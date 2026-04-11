@@ -59,7 +59,7 @@ Do NOT proceed to Phase 3 without explicit approval.
 
 ### Step 0: Check for existing manifest
 
-Before writing anything, check for `{vault}/projects/{project}/seed-manifest.json`. If it exists:
+Before writing anything, check for `{vault}/projects/{project-name}/seed-manifest.json`. If it exists:
 
 1. Read the manifest and show a status summary:
    ```
@@ -86,7 +86,7 @@ Update `{vault}/projects/{project-name}/index.md` under `## Notes` with **planne
 
 The description explains what the note should contain. Don't replace existing links. Create the section if absent. The index is always written **before** any content notes.
 
-After writing the index, create `{vault}/projects/{project}/seed-manifest.json`:
+After writing the index, create `{vault}/projects/{project-name}/seed-manifest.json`:
 
 ```json
 {

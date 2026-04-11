@@ -37,6 +37,7 @@ export function validateLinksTo(linksTo, index, plannedLinks = []) {
   const dangling = [];
 
   for (const title of linksTo) {
+    if (typeof title !== 'string') continue;
     const lower = title.toLowerCase();
     if (existingTitles.has(lower) || plannedTitles.has(lower)) {
       valid.push(title);

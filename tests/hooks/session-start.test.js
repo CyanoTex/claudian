@@ -146,7 +146,6 @@ capabilities:
 `);
 
     const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
-    // exec is promisify(execFile) — safe, no shell injection
     const { stdout } = await exec('node', [runnerPath, configPath]);
     const output = JSON.parse(stdout);
     expect(output.hookSpecificOutput.additionalContext).toContain('vault-seed has 2 unfinished note');
@@ -154,7 +153,6 @@ capabilities:
 
   it('nudges when gardener has never run', async () => {
     const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
-    // exec is promisify(execFile) — safe, no shell injection
     const { stdout } = await exec('node', [runnerPath, configPath]);
     const output = JSON.parse(stdout);
     expect(output.hookSpecificOutput.additionalContext).toContain('Vault maintenance has never run');
@@ -167,7 +165,6 @@ capabilities:
     await writeFile(join(claudianDir, 'gardener-last-run'), oldDate);
 
     const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
-    // exec is promisify(execFile) — safe, no shell injection
     const { stdout } = await exec('node', [runnerPath, configPath]);
     const output = JSON.parse(stdout);
     expect(output.hookSpecificOutput.additionalContext).toContain("hasn't run in");
@@ -180,7 +177,6 @@ capabilities:
     await writeFile(join(claudianDir, 'gardener-last-run'), today);
 
     const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
-    // exec is promisify(execFile) — safe, no shell injection
     const { stdout } = await exec('node', [runnerPath, configPath]);
     const output = JSON.parse(stdout);
     expect(output.hookSpecificOutput.additionalContext).not.toContain('maintenance');

@@ -118,12 +118,17 @@ async function run() {
   try {
     const gardenerTimePath = join(vaultPath, '.claudian', 'gardener-last-run');
     const lastRun = (await readFile(gardenerTimePath, 'utf-8')).trim();
-    const daysAgo = Math.floor((Date.now() - new Date(lastRun).getTime()) / (1000 * 60 * 60 * 24));
-    if (daysAgo >= 7) {
-      lines.push(`## Maintenance`);
-      lines.push(``);
-      lines.push(`Vault maintenance hasn't run in ${daysAgo} days. Consider running /vault-gardener.`);
-      lines.push(``);
+    const lastRunDate = new Date(lastRun);
+    if (isNaN(lastRunDate.getTime())) {
+      warnings.push({ file: '.claudian/gardener-last-run', error: `Invalid date: "${lastRun}"` });
+    } else {
+      const daysAgo = Math.floor((Date.now() - lastRunDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysAgo >= 7) {
+        lines.push(`## Maintenance`);
+        lines.push(``);
+        lines.push(`Vault maintenance hasn't run in ${daysAgo} days. Consider running /vault-gardener.`);
+        lines.push(``);
+      }
     }
   } catch (err) {
     if (err.code === 'ENOENT') {
@@ -131,6 +136,8 @@ async function run() {
       lines.push(``);
       lines.push(`Vault maintenance has never run. Consider running /vault-gardener.`);
       lines.push(``);
+    } else {
+      warnings.push({ file: '.claudian/gardener-last-run', error: err?.message || err });
     }
   }
 
