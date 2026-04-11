@@ -192,4 +192,27 @@ capabilities:
     const output = JSON.parse(stdout);
     expect(output.hookSpecificOutput.additionalContext).toContain('Invalid date');
   });
+
+  it('caches backlinks in the index cache', async () => {
+    await writeFile(join(vaultDir, 'knowledge', 'linking-note.md'), `---
+title: Linking Note
+type: knowledge
+project: cross-project
+source: claude
+tags: [testing]
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+
+See [[Test Pattern]] for details.`);
+
+    const runnerPath = join(process.cwd(), 'hooks', 'session-start.runner.js');
+    await exec('node', [runnerPath, configPath]);
+
+    const pointerPath = cachePointerPath();
+    const cachePath = (await readFile(pointerPath, 'utf-8')).trim();
+    const cached = JSON.parse(await readFile(cachePath, 'utf-8'));
+    expect(cached.backlinks).toBeDefined();
+    expect(cached.backlinks['test pattern']).toContain('Linking Note');
+  });
 });

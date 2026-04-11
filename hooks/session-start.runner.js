@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
+import { execFileSync } from 'child_process';
 import { loadFrom, detectProject } from '../core/config.js';
 import { buildIndex, rankNotes } from '../core/relevance.js';
 import { resolveHome, cachePointerPath } from '../core/resolver.js';
@@ -12,6 +13,19 @@ export function indexCachePath(vaultPath) {
 }
 
 const configPath = process.argv[2] || resolveHome('~/.claudian/config.yaml');
+
+function extractGitKeywords(cwd) {
+  try {
+    const keywords = new Set();
+    const branch = execFileSync('git', ['branch', '--show-current'], { cwd, encoding: 'utf-8', timeout: 5000 }).trim();
+    branch.split(/[/\-_]+/).filter(w => w.length >= 5).forEach(w => keywords.add(w.toLowerCase()));
+    const log = execFileSync('git', ['log', '--oneline', '-5', '--format=%s'], { cwd, encoding: 'utf-8', timeout: 5000 }).trim();
+    log.split(/[\s\-_.,;:!?()\[\]"'`#@/{}]+/).filter(w => w.length >= 5).forEach(w => keywords.add(w.toLowerCase()));
+    return [...keywords];
+  } catch {
+    return [];
+  }
+}
 
 async function run() {
   let config;
@@ -26,9 +40,9 @@ async function run() {
   const { vault, project, tags } = detectProject(config, cwd);
   const vaultPath = resolveHome(vault.path);
 
-  let index, warnings;
+  let index, warnings, backlinks;
   try {
-    ({ index, warnings } = await buildIndex(vaultPath));
+    ({ index, warnings, backlinks } = await buildIndex(vaultPath));
   } catch (err) {
     output(`[Claudian] Could not read vault at ${vaultPath}: ${err.message}`);
     return;
@@ -39,13 +53,14 @@ async function run() {
   const pointerPath = cachePointerPath();
   try {
     await mkdir(dirname(cachePath), { recursive: true });
-    await writeFile(cachePath, JSON.stringify({ project, index }));
+    await writeFile(cachePath, JSON.stringify({ project, index, backlinks }));
     await writeFile(pointerPath, cachePath);
   } catch {
     // Non-fatal: prompt-submit will just skip matching
   }
 
-  const relevant = rankNotes(index, project, tags || []).slice(0, 20);
+  const gitKeywords = extractGitKeywords(cwd);
+  const relevant = rankNotes(index, project, tags || [], gitKeywords).slice(0, 20);
 
   const lines = [
     `# Claudian Vault Context`,
