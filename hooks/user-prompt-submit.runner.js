@@ -1,6 +1,10 @@
 import { readFile } from 'fs/promises';
 import { cachePointerPath } from '../core/resolver.js';
 
+const MIN_MESSAGE_LENGTH = 20;
+const MIN_SCORE = 4;
+const MAX_SUGGESTIONS = 3;
+
 function isRelevant(note, currentProject) {
   if (note.project === currentProject) return true;
   if (note.project === 'cross-project' || note.visibility === 'cross-project') return true;
@@ -8,21 +12,34 @@ function isRelevant(note, currentProject) {
   return false;
 }
 
-export function matchKeywords(message, index) {
-  const messageLower = message.toLowerCase();
-  const matched = new Map();
-
-  for (const note of index) {
-    const titleWords = note.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-    const titleMatch = titleWords.some(word => messageLower.includes(word));
-    const tagMatch = note.tags.some(tag => messageLower.includes(tag.toLowerCase()));
-
-    if (titleMatch || tagMatch) {
-      matched.set(note.relPath, note);
+function tokenize(text) {
+  const raw = text.toLowerCase().split(/[\s.,;:!?()\[\]"'`#@/{}]+/).filter(w => w.length > 0);
+  const tokens = new Set();
+  for (const token of raw) {
+    tokens.add(token);
+    if (token.includes('-') || token.includes('_')) {
+      for (const part of token.split(/[-_]+/)) {
+        if (part.length > 0) tokens.add(part);
+      }
     }
   }
+  return tokens;
+}
 
-  return Array.from(matched.values());
+export function scoreMatch(message, note) {
+  const messageWords = tokenize(message);
+  let score = 0;
+
+  const titleWords = note.title.split(/[\s\-_]+/).map(w => w.toLowerCase()).filter(w => w.length >= 5);
+  for (const word of titleWords) {
+    if (messageWords.has(word)) score += 2;
+  }
+
+  for (const tag of note.tags) {
+    if (messageWords.has(tag.toLowerCase())) score += 3;
+  }
+
+  return score;
 }
 
 async function run() {
@@ -44,7 +61,11 @@ async function run() {
     userMessage = input;
   }
 
-  // Read the active cache pointer written by SessionStart
+  if (userMessage.length < MIN_MESSAGE_LENGTH) {
+    emptyOutput();
+    return;
+  }
+
   const pointerPath = cachePointerPath();
   let index;
   try {
@@ -53,19 +74,26 @@ async function run() {
     const project = cached.project || null;
     const fullIndex = 'index' in cached ? cached.index : cached;
     index = fullIndex.filter(note => isRelevant(note, project));
-  } catch {
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      process.stderr.write(`[Claudian] Cache read failed: ${err?.message || err}\n`);
+    }
     emptyOutput();
     return;
   }
 
-  const matches = matchKeywords(userMessage, index);
+  const scored = index
+    .map(note => ({ note, score: scoreMatch(userMessage, note) }))
+    .filter(({ score }) => score >= MIN_SCORE)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, MAX_SUGGESTIONS);
 
-  if (matches.length === 0) {
+  if (scored.length === 0) {
     emptyOutput();
     return;
   }
 
-  const noteList = matches.slice(0, 5).map(n => `[[${n.title}]] (${n.relPath})`).join(', ');
+  const noteList = scored.map(({ note }) => `[[${note.title}]] (${note.relPath})`).join(', ');
   const context = `[Claudian] Vault may have relevant notes: ${noteList}. Consider vault-search.`;
 
   process.stdout.write(JSON.stringify({
@@ -85,9 +113,11 @@ function emptyOutput() {
   }));
 }
 
-// Only run as main module
 import { pathToFileURL } from 'url';
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  run().catch(() => emptyOutput());
+  run().catch(err => {
+    process.stderr.write(`[Claudian] UserPromptSubmit error: ${err?.message || err}\n`);
+    emptyOutput();
+  });
 }
