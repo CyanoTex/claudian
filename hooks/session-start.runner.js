@@ -18,8 +18,9 @@ function extractGitKeywords(cwd) {
   try {
     const keywords = new Set();
     const branch = execFileSync('git', ['branch', '--show-current'], { cwd, encoding: 'utf-8', timeout: 5000 }).trim();
+    if (!branch) return [];
     branch.split(/[/\-_]+/).filter(w => w.length >= 5).forEach(w => keywords.add(w.toLowerCase()));
-    const log = execFileSync('git', ['log', '--oneline', '-5', '--format=%s'], { cwd, encoding: 'utf-8', timeout: 5000 }).trim();
+    const log = execFileSync('git', ['log', '-5', '--format=%s'], { cwd, encoding: 'utf-8', timeout: 5000 }).trim();
     log.split(/[\s\-_.,;:!?()\[\]"'`#@/{}]+/).filter(w => w.length >= 5).forEach(w => keywords.add(w.toLowerCase()));
     return [...keywords];
   } catch {
@@ -48,7 +49,7 @@ async function run() {
     return;
   }
 
-  // Cache index for UserPromptSubmit hook (avoids rebuilding on every prompt)
+  // Cache index + backlinks for downstream hooks and consumers
   const cachePath = indexCachePath(vaultPath);
   const pointerPath = cachePointerPath();
   try {

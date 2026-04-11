@@ -48,9 +48,10 @@ export async function buildIndex(vaultDir) {
     }
   });
 
-  const backlinks = {};
+  const backlinks = Object.create(null);
   for (const [sourceTitle, targets] of outboundLinks) {
     for (const target of targets) {
+      if (!target) continue;
       const key = target.toLowerCase();
       if (!backlinks[key]) backlinks[key] = [];
       backlinks[key].push(sourceTitle);
@@ -93,8 +94,9 @@ function scoreNote(note, currentProject, currentTags, gitKeywords = []) {
     let gitScore = 0;
     const titleWords = note.title.toLowerCase().split(/[\s\-_]+/).filter(w => w.length >= 5);
     for (const keyword of gitKeywords) {
-      if (titleWords.includes(keyword)) gitScore += 2;
-      if (note.tags.some(t => t.toLowerCase() === keyword)) gitScore += 2;
+      if (titleWords.includes(keyword) || note.tags.some(t => t.toLowerCase() === keyword)) {
+        gitScore += 2;
+      }
     }
     score += Math.min(gitScore, 10);
   }

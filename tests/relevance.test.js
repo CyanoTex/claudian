@@ -264,11 +264,18 @@ No links here.`);
     });
 
     it('boosts notes matching git keywords in title', () => {
-      const ranked = rankNotes(notes, 'my-app', [], ['architecture']);
-      expect(ranked[0].title).toBe('Recent Project Note');
-      expect(ranked[0].score).toBeGreaterThan(
-        rankNotes(notes, 'my-app', [], [])[0].score
-      );
+      const titleNote = {
+        title: 'Backlinks Implementation Guide',
+        path: '/vault/knowledge/backlinks.md',
+        tags: ['guide'],
+        project: 'my-app',
+        visibility: 'project-only',
+        'relevant-to': [],
+        updated: '2026-04-04',
+      };
+      const ranked = rankNotes([titleNote], 'my-app', [], ['backlinks']);
+      const rankedNoGit = rankNotes([titleNote], 'my-app', [], []);
+      expect(ranked[0].score).toBeGreaterThan(rankedNoGit[0].score);
     });
 
     it('boosts notes matching git keywords in tags', () => {
