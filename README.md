@@ -93,7 +93,6 @@ Every note has typed frontmatter with tags, project scope, and visibility settin
 | Skill | What it does |
 |-------|-------------|
 | `/vault-write` | Create or update a vault note |
-| `/vault-search` | Search by content, tags, project, or type |
 | `/vault-extract` | Process your freeform `ideas/` notes into structured knowledge |
 | `/vault-link` | Find and create connections between notes |
 | `/vault-status` | Vault health dashboard — orphans, stale notes, coverage |

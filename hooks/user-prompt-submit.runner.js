@@ -94,7 +94,7 @@ async function run() {
   }
 
   const noteList = scored.map(({ note }) => `[[${note.title}]] (${note.relPath})`).join(', ');
-  const context = `[Claudian] Vault may have relevant notes: ${noteList}. Consider vault-search.`;
+  const context = `[Claudian] Vault may have relevant notes: ${noteList}.`;
 
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {

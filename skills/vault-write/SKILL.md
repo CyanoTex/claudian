@@ -31,7 +31,7 @@ Do **NOT** use for:
 | `pattern` | Reusable code or process patterns | cross-project | Problem, Solution, When to Use, When Not to Use, Known Uses |
 | `gotcha` | Bugs, footguns, surprising behaviour | cross-project | The Gotcha, How to Detect, Fix, Prevention |
 
-**2. Check for duplicates** using `vault-search`. If a note on this topic exists, update it — add new content under `## Updates` with the date. Don't create duplicates.
+**2. Check for duplicates** by searching the vault (Grep note titles, or check the project index). If a note on this topic exists, update it — add new content under `## Updates` with the date. Don't create duplicates.
 
 **3. Write with complete frontmatter**
 
