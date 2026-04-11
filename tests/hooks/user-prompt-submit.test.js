@@ -22,9 +22,9 @@ describe('user-prompt-submit', () => {
         tags: ['architecture'],
         relPath: 'projects/my-game/arch.md',
       };
-      // "App" is 3 chars — ignored. Only "architecture" (12 chars) matches = 2 pts
+      // "App" is 3 chars — ignored. "architecture" title match (2) + tag match (3) = 5
       const score = scoreMatch('Explain the app architecture', note);
-      expect(score).toBe(5); // 2 (title "architecture") + 3 (tag "architecture")
+      expect(score).toBe(5);
     });
 
     it('scores 3 points per tag match', () => {
