@@ -5,7 +5,7 @@ description: Summarize an archived graphify knowledge-graph report — cross-clu
 
 # vault-graph
 
-Render a Claudian-flavored summary of a graphify `GRAPH_REPORT.md` archived under `<vault>/reports/graph-<YYYY-MM-DD>/`. Claudian does not build the graph — graphify does (`pipx install graphifyy`, then `/graphify <vault>` in its own session). This skill reads the archive and translates it into suggested `vault-write` / `vault-link` actions.
+Read an archived graphify `GRAPH_REPORT.md` under `<vault>/reports/graph-<YYYY-MM-DD>/` and translate it into suggested `vault-write` / `vault-link` actions. This skill does not run graphify — see **No Graph Found** for that.
 
 ## When to Use
 
@@ -89,5 +89,3 @@ To produce one:
 
 graphify: https://github.com/safishamsi/graphify
 ```
-
-Do not try to invoke graphify from this skill. Graphify's pipeline is multi-turn LLM orchestration (detect → parallel subagent extraction → cluster → label → export); it lives in graphify's own skill, not wrapped inside Claudian.
